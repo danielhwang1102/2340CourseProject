@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="jumbotron bg-light p-5 rounded">
+    <h1 class="display-4">Welcome to JobPlatform</h1>
+    <p class="lead">Connect job seekers with great opportunities</p>
+    {% if not user.is_authenticated %}
+    <a href="{% url 'account_signup' %}" class="btn btn-primary btn-lg">Get Started</a>
+    <a href="{% url 'job_list' %}" class="btn btn-outline-primary btn-lg">Browse Jobs</a>
+    {% endif %}
+</div>
+{% endblock %}

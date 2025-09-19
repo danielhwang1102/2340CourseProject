@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ job.title }} - {{ job.get_company_name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h1>{{ job.title }}</h1>
+                    <p class="text-muted">
+                        <i class="fas fa-building"></i> {{ job.get_company_name }}
+                        <span class="mx-2">•</span>
+                        <i class="fas fa-map-marker-alt"></i> {{ job.location }}
+                        <span class="mx-2">•</span>
+                        <i class="fas fa-calendar"></i> Posted {{ job.created_at|date:"M d, Y" }}
+                    </p>
+                    
+                    <!-- Apply Button for Job Seekers -->
+                    {% if user.is_authenticated and user.user_type == 'job_seeker' %}
+                        {% if not user_has_applied %}
+                            {% if job.is_active %}
+                                <div class="mb-4">
+                                    <a href="{% url 'applications:apply' job.pk %}" class="btn btn-primary btn-lg">
+                                        <i class="fas fa-paper-plane"></i> Apply for this Job
+                                    </a>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    This job is no longer accepting applications.
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i>
+                                You have already applied to this job.
+                                <a href="{% url 'applications:my_applications' %}" class="btn btn-outline-success btn-sm ms-2">
+                                    View My Applications
+                                </a>
+                            </div>
+                        {% endif %}
+                    {% elif user.is_authenticated and user.user_type == 'recruiter' %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            You are viewing this as a recruiter.
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <a href="{% url 'account_login' %}">Login</a> as a job seeker to apply for this job.
+                        </div>
+                    {% endif %}
+                    
+                    <div class="job-details">
+                        <h3>Job Description</h3>
+                        <div class="mb-3">{{ job.description|linebreaks }}</div>
+                        
+                        {% if job.requirements %}
+                            <h3>Requirements</h3>
+                            <div class="mb-3">{{ job.requirements|linebreaks }}</div>
+                        {% endif %}
+                        
+                        {% if job.benefits %}
+                            <h3>Benefits</h3>
+                            <div class="mb-3">{{ job.benefits|linebreaks }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Job Details</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Job Type:</strong> {{ job.get_job_type_display }}</p>
+                    <p><strong>Experience Level:</strong> {{ job.get_experience_level_display }}</p>
+                    {% if job.salary_min and job.salary_max %}
+                        <p><strong>Salary:</strong> ${{ job.salary_min|floatformat:0 }} - ${{ job.salary_max|floatformat:0 }}</p>
+                    {% endif %}
+                    <p><strong>Location Type:</strong> {{ job.get_location_type_display }}</p>
+                    {% if job.visa_sponsorship %}
+                        <p><strong>Visa Sponsorship:</strong> Available</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
