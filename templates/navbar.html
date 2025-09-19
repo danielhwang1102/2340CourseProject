@@ -1,19 +1,77 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
-        <a class="navbar-brand" href="{% url 'home' %}">JobPlatform</a>
-        <div class="navbar-nav ms-auto">
-            {% if user.is_authenticated %}
-                <span class="navbar-text me-3">Hello, {{ user.username }}</span>
-                {% if user.user_type == 'job_seeker' %}
-                <a class="nav-link" href="{% url 'job_list' %}">Browse Jobs</a>
-                <a class="nav-link" href="{% url 'applications:my_applications' %}">My Applications</a>
+        <a class="navbar-brand" href="{% url 'home' %}">
+            <i class="fas fa-briefcase"></i> JobPlatform
+        </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'jobs:job_list' %}">
+                        <i class="fas fa-search"></i> Browse Jobs
+                    </a>
+                </li>
+            </ul>
+            
+            <ul class="navbar-nav">
+                {% if user.is_authenticated %}
+                    {% if user.user_type == 'job_seeker' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'applications:my_applications' %}">
+                                <i class="fas fa-file-alt"></i> My Applications
+                            </a>
+                        </li>
+                    {% elif user.user_type == 'recruiter' %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="recruiterDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-briefcase"></i> Jobs
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{% url 'jobs:job_create' %}">
+                                    <i class="fas fa-plus"></i> Post New Job
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'jobs:my_jobs' %}">
+                                    <i class="fas fa-list"></i> My Job Postings
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'jobs:job_list' %}">
+                                    <i class="fas fa-eye"></i> Browse All Jobs
+                                </a></li>
+                            </ul>
+                        </li>
+                    {% endif %}
+                    
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user"></i> {{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'admin:index' %}">
+                                <i class="fas fa-cog"></i> Admin Panel
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'account_logout' %}">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a></li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'account_login' %}">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'account_signup' %}">
+                            <i class="fas fa-user-plus"></i> Sign Up
+                        </a>
+                    </li>
                 {% endif %}
-                <a class="nav-link" href="{% url 'account_logout' %}">Logout</a>
-            {% else %}
-                <a class="nav-link" href="{% url 'job_list' %}">Browse Jobs</a>
-                <a class="nav-link" href="{% url 'account_login' %}">Login</a>
-                <a class="nav-link" href="{% url 'account_signup' %}">Sign Up</a>
-            {% endif %}
+            </ul>
         </div>
     </div>
 </nav>

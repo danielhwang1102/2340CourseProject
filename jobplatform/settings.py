@@ -81,9 +81,14 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/New_York'
 USE_I18N = True
 USE_TZ = True
+USE_L10N = False  # ← ADD THIS LINE
+DATE_FORMAT = 'Y-m-d'  # ← ADD THIS LINE
+DATE_INPUT_FORMATS = ['%Y-%m-%d', '%m/%d/%Y', '%m/%d/%y']  # ← ADD THIS LINE
+DATETIME_FORMAT = 'Y-m-d H:i:s'  # ← ADD THIS LINE
+TIME_FORMAT = 'H:i:s'  # ← ADD THIS LINE
 
 # Static files
 STATIC_URL = '/static/'

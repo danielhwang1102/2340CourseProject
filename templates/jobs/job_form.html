@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+    {% if object %}Edit Job: {{ object.title }}{% else %}Post New Job{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h3>
+                        <i class="fas fa-briefcase"></i>
+                        {% if object %}Edit Job: {{ object.title }}{% else %}Post New Job{% endif %}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                <fieldset class="mb-4">
+                                    <legend class="h5">Basic Information</legend>
+                                    {{ form.title|as_crispy_field }}
+                                    {{ form.description|as_crispy_field }}
+                                    {{ form.requirements|as_crispy_field }}
+                                </fieldset>
+                                
+                                <fieldset class="mb-4">
+                                    <legend class="h5">Skills & Requirements</legend>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <label class="form-label">Required Skills (Optional)</label>
+                                            {{ form.required_skills }}
+                                            <div class="form-text">{{ form.required_skills.help_text }}</div>
+                                        </div>
+                                    </div>
+                                </fieldset>
+                                
+                                <fieldset class="mb-4">
+                                    <legend class="h5">Additional Information</legend>
+                                    {{ form.benefits|as_crispy_field }}
+                                </fieldset>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <fieldset class="mb-4">
+                                    <legend class="h5">Company & Location</legend>
+                                    {{ form.company_name|as_crispy_field }}
+                                    {{ form.location|as_crispy_field }}
+                                    {{ form.location_type|as_crispy_field }}
+                                </fieldset>
+                                
+                                <fieldset class="mb-4">
+                                    <legend class="h5">Job Details</legend>
+                                    {{ form.job_type|as_crispy_field }}
+                                    {{ form.experience_level|as_crispy_field }}
+                                </fieldset>
+                                
+                                <fieldset class="mb-4">
+                                    <legend class="h5">Compensation</legend>
+                                    {{ form.salary_min|as_crispy_field }}
+                                    {{ form.salary_max|as_crispy_field }}
+                                    {{ form.salary_currency|as_crispy_field }}
+                                </fieldset>
+                                
+                                <fieldset class="mb-4">
+                                    <legend class="h5">Options</legend>
+                                    <div class="form-check mb-3">
+                                        {{ form.visa_sponsorship }}
+                                        <label class="form-check-label" for="{{ form.visa_sponsorship.id_for_label }}">
+                                            Visa Sponsorship Available
+                                        </label>
+                                        <div class="form-text">{{ form.visa_sponsorship.help_text }}</div>
+                                    </div>
+                                    {{ form.application_deadline|as_crispy_field }}
+                                </fieldset>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'jobs:my_jobs' %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-arrow-left"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i>
+                                {% if object %}Update Job{% else %}Post Job{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
