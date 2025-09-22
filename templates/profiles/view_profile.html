@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Profile</h2>
+    {% if profile %}
+        <ul>
+            {% if profile.name %}
+                <li><strong>Company Name:</strong> {{ profile.name }}</li>
+                <li><strong>Description:</strong> {{ profile.description }}</li>
+                <li><strong>Website:</strong> {{ profile.website }}</li>
+                <li><strong>Location:</strong> {{ profile.location }}</li>
+            {% else %}
+                <li><strong>Bio:</strong> {{ profile.bio }}</li>
+                <li><strong>Location:</strong> {{ profile.location }}</li>
+                <li><strong>Resume:</strong> {{ profile.resume }}</li>
+            {% endif %}
+        </ul>
+    {% else %}
+        <p>No profile information available.</p>
+    {% endif %}
+{% endblock %}

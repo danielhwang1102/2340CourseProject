@@ -13,6 +13,7 @@ urlpatterns = [
     path('users/', include('users.urls')),
     path('profile-completion/', profile_completion_required, name='profile_completion'),
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
+    path('profiles/', include(('profiles.urls', 'profiles'), namespace='profiles')),
 ]
 
 # Serve media files in development
