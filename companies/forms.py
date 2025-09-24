@@ -4,4 +4,4 @@ from .models import Company
 class CompanyProfileForm(forms.ModelForm):
     class Meta:
         model = Company
-        fields = ['name', 'description', 'website', 'logo', 'location', 'founded_year', 'employees_count']
+        fields = '__all__'  # This includes all fields in the Company model

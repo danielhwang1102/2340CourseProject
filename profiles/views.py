@@ -3,6 +3,7 @@ from django.shortcuts import render
 import companies
 from .forms import ProfileForm
 from companies.forms import CompanyProfileForm
+from companies.models import Company
 
 
 # Create your views here.
@@ -15,7 +16,7 @@ def edit_profile(request):
     if user.user_type == 'recruiter':
         form_class = CompanyProfileForm
         # Assuming one company per recruiter:
-        company = companies.objects.filter(created_by=user).first()
+        company = Company.objects.filter(created_by=user).first()
         profile_instance = company
     else:
         form_class = ProfileForm
@@ -34,7 +35,7 @@ def edit_profile(request):
 def view_profile(request):
     user = request.user
     if user.user_type == 'recruiter':
-        company = companies.objects.filter(created_by=user).first()
+        company = Company.objects.filter(created_by=user).first()
         profile_instance = company
     else:
         profile_instance = getattr(user, 'profile', None)

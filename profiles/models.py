@@ -42,6 +42,19 @@ class Profile(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def get_all_fields(self):
+        """
+        Returns a dictionary of all field names and their values for this profile.
+        Useful for debugging or dynamic display.
+        """
+        fields = {}
+        for field in self._meta.fields:
+            value = getattr(self, field.name)
+            fields[field.name] = value
+        # Add skills (ManyToMany)
+        fields['skills'] = [skill.name for skill in self.skills.all()]
+        return fields
+
     def __str__(self):
         return f"{self.user.username}'s Profile"
 

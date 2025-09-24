@@ -17,3 +17,13 @@ class Company(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_all_fields(self):
+        """
+        Returns a dictionary of all field names and their values for this company.
+        """
+        fields = {}
+        for field in self._meta.fields:
+            value = getattr(self, field.name)
+            fields[field.name] = value
+        return fields

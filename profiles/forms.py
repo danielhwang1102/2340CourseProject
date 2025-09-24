@@ -29,4 +29,4 @@ class ProfileCompletionForm(forms.ModelForm):
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ['bio', 'location', 'resume']  # Add your Profile fields here
+        fields = '__all__'  # Add your Profile fields here
