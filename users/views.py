@@ -29,15 +29,33 @@ class ProfileCompletionView(LoginRequiredMixin, UpdateView):
         return profile
 
     def form_valid(self, form):
-        response = super().form_valid(form)
-        # Mark profile as completed
-        if form.instance.is_complete:
+        # Save form and many-to-many data first so we can evaluate completeness
+        self.object = form.save()
+        try:
+            form.save_m2m()
+        except Exception:
+            # Some forms may not have m2m data; ignore if not present
+            pass
+
+        # Decide completeness based on user type. Job seekers use Profile.is_complete,
+        # recruiters only need basic fields (headline, bio, location).
+        user_type = getattr(self.request.user, 'user_type', None)
+        if user_type == 'job_seeker' or user_type is None:
+            complete = form.instance.is_complete
+        else:
+            required_fields = [form.instance.headline, form.instance.bio, form.instance.location]
+            complete = all(required_fields)
+
+        if complete:
+            # mark user and redirect to dashboard
             self.request.user.profile_completed = True
             self.request.user.save()
             messages.success(self.request, 'Profile completed successfully!')
+            return redirect('dashboard')
         else:
             messages.warning(self.request, 'Please complete all required fields.')
-        return response
+            # Re-render the form with the warning (do not redirect)
+            return self.render_to_response(self.get_context_data(form=form))
 
 class JobSeekerProfileCompletionView(ProfileCompletionView):
     """Job seeker specific profile completion"""
