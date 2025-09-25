@@ -3,15 +3,15 @@ from django.utils import timezone
 from .models import Job
 from profiles.models import Skill
 
+
 class JobForm(forms.ModelForm):
     required_skills = forms.ModelMultipleChoiceField(
-        queryset=Skill.objects.all(),
+        queryset=Skill.objects.all().order_by('name'),
         widget=forms.CheckboxSelectMultiple(),
         required=False,
         help_text="Select skills required for this position"
     )
-    
-    # Override the application_deadline field to force English format
+
     application_deadline = forms.DateField(
         required=False,
         widget=forms.DateInput(attrs={
@@ -20,19 +20,18 @@ class JobForm(forms.ModelForm):
             'placeholder': 'YYYY-MM-DD',
             'lang': 'en-US'
         }),
-        help_text='Application deadline (optional, format: YYYY-MM-DD)',
         input_formats=['%Y-%m-%d'],
-        localize=False
+        localize=False,
+        help_text='Application deadline (optional, format: YYYY-MM-DD)'
     )
-    
-    # Override salary_currency to ensure proper display
+
     salary_currency = forms.ChoiceField(
-        choices=Job.CURRENCY_CHOICES,
+        choices=getattr(Job, 'CURRENCY_CHOICES', [('USD', 'US Dollar ($)')]),
         initial='USD',
         widget=forms.Select(attrs={'class': 'form-control'}),
         help_text='Select the currency for salary range'
     )
-    
+
     class Meta:
         model = Job
         fields = [
@@ -41,7 +40,7 @@ class JobForm(forms.ModelForm):
             'salary_min', 'salary_max', 'salary_currency', 'benefits',
             'required_skills', 'visa_sponsorship', 'application_deadline'
         ]
-        
+
         widgets = {
             'description': forms.Textarea(attrs={
                 'rows': 5,
@@ -85,7 +84,7 @@ class JobForm(forms.ModelForm):
             'experience_level': forms.Select(attrs={'class': 'form-control'}),
             'visa_sponsorship': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
-        
+
         help_texts = {
             'salary_min': 'Minimum annual salary',
             'salary_max': 'Maximum annual salary',
@@ -97,31 +96,77 @@ class JobForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Make certain fields required
-        self.fields['title'].required = True
-        self.fields['description'].required = True
-        self.fields['location'].required = True
-        self.fields['company_name'].required = True
-        self.fields['job_type'].required = True
-        self.fields['location_type'].required = True
-        self.fields['experience_level'].required = True
-    
+        # Required fields
+        for f in ['title', 'description', 'location', 'company_name', 'job_type', 'location_type', 'experience_level']:
+            if f in self.fields:
+                self.fields[f].required = True
+
     def clean_application_deadline(self):
         deadline = self.cleaned_data.get('application_deadline')
         if deadline and deadline < timezone.now().date():
             raise forms.ValidationError("Application deadline cannot be in the past.")
         return deadline
-    
+
     def clean(self):
-        cleaned_data = super().clean()
-        salary_min = cleaned_data.get('salary_min')
-        salary_max = cleaned_data.get('salary_max')
-        
-        # Validate salary range
-        if salary_min and salary_max:
-            if salary_min >= salary_max:
-                raise forms.ValidationError(
-                    "Maximum salary must be greater than minimum salary."
-                )
-        
-        return cleaned_data
+        cleaned = super().clean()
+        smin = cleaned.get('salary_min')
+        smax = cleaned.get('salary_max')
+        if smin and smax and smin >= smax:
+            raise forms.ValidationError("Maximum salary must be greater than minimum salary.")
+        return cleaned
+
+
+class JobFilterForm(forms.Form):
+    q = forms.CharField(
+        required=False,
+        label='Keyword',
+        widget=forms.TextInput(attrs={'placeholder': 'Title, company, or description', 'class': 'form-control'})
+    )
+    location = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'placeholder': 'City, State or Remote', 'class': 'form-control'})
+    )
+    job_type = forms.ChoiceField(
+        required=False,
+        choices=[('', 'Any')],
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Job Type'
+    )
+    location_type = forms.ChoiceField(
+        required=False,
+        choices=[('', 'Any')],
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Work Location'
+    )
+    experience_level = forms.ChoiceField(
+        required=False,
+        choices=[('', 'Any')],
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Experience Level'
+    )
+    salary_min = forms.IntegerField(
+        required=False, min_value=0,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Min'})
+    )
+    salary_max = forms.IntegerField(
+        required=False, min_value=0,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Max'})
+    )
+    visa_sponsorship = forms.ChoiceField(
+        required=False,
+        choices=[('', 'Any'), ('yes', 'Yes'), ('no', 'No')],
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Visa Sponsorship'
+    )
+    skills = forms.ModelMultipleChoiceField(
+        required=False,
+        queryset=Skill.objects.all().order_by('name'),
+        widget=forms.SelectMultiple(attrs={'class': 'form-select', 'size': '6'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Bind choices from model constants
+        self.fields['job_type'].choices = [('', 'Any')] + list(getattr(Job, 'JOB_TYPE', []))
+        self.fields['location_type'].choices = [('', 'Any')] + list(getattr(Job, 'LOCATION_TYPE', []))
+        self.fields['experience_level'].choices = [('', 'Any')] + list(getattr(Job, 'EXPERIENCE_LEVEL', []))
