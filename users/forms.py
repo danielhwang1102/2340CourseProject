@@ -17,6 +17,11 @@ class CustomSignupForm(SignupForm):
         help_text="Enter your company name (recruiters only)"
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['email'].required = True
+        self.fields['email'].label = "Email:"  # Remove "(optional)"
+
     def clean(self):
         cleaned_data = super().clean()
         user_type = cleaned_data.get('user_type')
