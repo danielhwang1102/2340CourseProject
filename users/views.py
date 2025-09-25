@@ -6,6 +6,16 @@ from django.views.generic import UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from profiles.models import Profile
 from profiles.forms import ProfileCompletionForm
+from django.views import View
+
+class DashboardRedirectView(View):
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('account_login')
+        user_type = getattr(request.user, 'user_type', '')
+        if user_type == 'recruiter':
+            return redirect('jobs:my_jobs')
+        return redirect('jobs:job_list')
 
 @login_required
 def profile_completion_required(request):

@@ -4,8 +4,10 @@ from django.views.generic import TemplateView
 from django.conf import settings
 from django.conf.urls.static import static
 from users.views import profile_completion_required
+from users.views import DashboardRedirectView  
 
 urlpatterns = [
+    path('dashboard/', DashboardRedirectView.as_view(), name='dashboard'),
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
     path('jobs/', include('jobs.urls')),

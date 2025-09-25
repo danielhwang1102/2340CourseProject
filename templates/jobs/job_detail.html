@@ -30,6 +30,30 @@
                     <h3>Requirements</h3>
                     <p>{{ job.requirements|linebreaks }}</p>
                 {% endif %}
+
+                {% if job.benefits %}
+                    <h3>Benefits</h3>
+                    <p>{{ job.benefits|linebreaks }}</p>
+                {% endif %}
+
+                {% if job.required_skills.all %}
+                    {% with skills=job.required_skills.all %}
+                        {% if skills|length > 0 %}
+                            <h3>Required Skills</h3>
+                            <p>
+                                {% for skill in skills %}
+                                    <span class="badge bg-secondary me-1">{{ skill.name }}</span>
+                                {% endfor %}
+                            </p>
+                        {% endif %}
+                    {% endwith %}
+                {% endif %}
+
+                {% if job.visa_sponsorship %}
+                    <div class="alert alert-info mt-3">
+                        <strong>Visa sponsorship available</strong>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -41,10 +65,15 @@
             </div>
             <div class="card-body">
                 <p><strong>Location:</strong> {{ job.location }}</p>
+                <p><strong>Location type:</strong> {{ job.get_location_type_display }}</p>
                 <p><strong>Type:</strong> {{ job.get_job_type_display }}</p>
                 <p><strong>Experience:</strong> {{ job.get_experience_level_display }}</p>
-                {% if job.salary_min and job.salary_max %}
-                    <p><strong>Salary:</strong> {{ job.get_salary_display }}</p>
+                <p><strong>Compensation:</strong> {{ job.get_salary_display }}</p>
+                {% if job.application_deadline %}
+                    <p><strong>Apply by:</strong> {{ job.application_deadline|date:"M d, Y" }}</p>
+                {% endif %}
+                {% if job.posted_by %}
+                    <p><strong>Posted by:</strong> {{ job.posted_by.get_full_name|default:job.posted_by.username }}</p>
                 {% endif %}
                 <p><strong>Posted:</strong> {{ job.created_at|date:"M d, Y" }}</p>
             </div>
