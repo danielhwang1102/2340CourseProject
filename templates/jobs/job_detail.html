@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ job.title }} - {{ job.get_company_name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h1>{{ job.title }}</h1>
+                <h5 class="text-muted mb-3">{{ job.get_company_name }}</h5>
+                
+                <!-- Apply Button -->
+                {% if user.is_authenticated and user.user_type == 'job_seeker' %}
+                    {% if not user_has_applied %}
+                        <a href="{% url 'applications:apply' job_pk=job.pk %}" class="btn btn-primary btn-lg mb-3">
+                            <i class="fas fa-paper-plane"></i> Apply Now
+                        </a>
+                    {% else %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> You have already applied to this job.
+                        </div>
+                    {% endif %}
+                {% endif %}
+                
+                <h3>Job Description</h3>
+                <p>{{ job.description|linebreaks }}</p>
+                
+                {% if job.requirements %}
+                    <h3>Requirements</h3>
+                    <p>{{ job.requirements|linebreaks }}</p>
+                {% endif %}
+
+                {% if job.benefits %}
+                    <h3>Benefits</h3>
+                    <p>{{ job.benefits|linebreaks }}</p>
+                {% endif %}
+
+                {% if job.required_skills.all %}
+                    {% with skills=job.required_skills.all %}
+                        {% if skills|length > 0 %}
+                            <h3>Required Skills</h3>
+                            <p>
+                                {% for skill in skills %}
+                                    <span class="badge bg-secondary me-1">{{ skill.name }}</span>
+                                {% endfor %}
+                            </p>
+                        {% endif %}
+                    {% endwith %}
+                {% endif %}
+
+                {% if job.visa_sponsorship %}
+                    <div class="alert alert-info mt-3">
+                        <strong>Visa sponsorship available</strong>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>Job Details</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Location:</strong> {{ job.location }}</p>
+                <p><strong>Location type:</strong> {{ job.get_location_type_display }}</p>
+                <p><strong>Type:</strong> {{ job.get_job_type_display }}</p>
+                <p><strong>Experience:</strong> {{ job.get_experience_level_display }}</p>
+                <p><strong>Compensation:</strong> {{ job.get_salary_display }}</p>
+                {% if job.application_deadline %}
+                    <p><strong>Apply by:</strong> {{ job.application_deadline|date:"M d, Y" }}</p>
+                {% endif %}
+                {% if job.posted_by %}
+                    <p><strong>Posted by:</strong> {{ job.posted_by.get_full_name|default:job.posted_by.username }}</p>
+                {% endif %}
+                <p><strong>Posted:</strong> {{ job.created_at|date:"M d, Y" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

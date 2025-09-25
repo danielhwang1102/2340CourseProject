@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Profile</h2>
+    {% if profile %}
+        {% if profile.name %}
+            <!-- Company Recruiter (Company model) -->
+            <ul>
+                <li><strong>Company Name:</strong> {{ profile.name }}</li>
+                <li><strong>Description:</strong> {{ profile.description }}</li>
+                <li><strong>Website:</strong> {{ profile.website }}</li>
+                <li><strong>Logo:</strong>
+                    {% if profile.logo %}
+                        <img src="{{ profile.logo.url }}" alt="Logo" style="max-height:100px;">
+                    {% else %}
+                        No logo uploaded.
+                    {% endif %}
+                </li>
+                <li><strong>Location:</strong> {{ profile.location }}</li>
+                <li><strong>Founded Year:</strong> {{ profile.founded_year }}</li>
+                <li><strong>Employees Count:</strong> {{ profile.employees_count }}</li>
+                <li><strong>Created By:</strong> {{ profile.created_by.username }}</li>
+                <li><strong>Created At:</strong> {{ profile.created_at }}</li>
+            </ul>
+        {% else %}
+            <!-- Job Seeker (Profile model) -->
+            <ul>
+                <li><strong>Username:</strong> {{ profile.user.username }}</li>
+                <li><strong>Headline:</strong> {{ profile.headline }}</li>
+                <li><strong>Bio:</strong> {{ profile.bio }}</li>
+                <li><strong>Skills:</strong>
+                    {% if profile.skills.all %}
+                        {% for skill in profile.skills.all %}
+                            {{ skill.name }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        None
+                    {% endif %}
+                </li>
+                <li><strong>Location:</strong> {{ profile.location }}</li>
+                <li><strong>Website:</strong> <a href="{{ profile.website }}">{{ profile.website }}</a></li>
+                <li><strong>LinkedIn:</strong> <a href="{{ profile.linkedin }}">{{ profile.linkedin }}</a></li>
+                <li><strong>GitHub:</strong> <a href="{{ profile.github }}">{{ profile.github }}</a></li>
+                <li><strong>Resume:</strong>
+                    {% if profile.resume %}
+                        <a href="{{ profile.resume.url }}">Download Resume</a>
+                    {% else %}
+                        No resume uploaded.
+                    {% endif %}
+                </li>
+                <li><strong>Profile Picture:</strong>
+                    {% if profile.profile_picture %}
+                        <img src="{{ profile.profile_picture.url }}" alt="Profile Picture" style="max-height:100px;">
+                    {% else %}
+                        No profile picture uploaded.
+                    {% endif %}
+                </li>
+                <li><strong>Current Position:</strong> {{ profile.current_position }}</li>
+                <li><strong>Years Experience:</strong> {{ profile.years_experience }}</li>
+                <li><strong>Education:</strong> {{ profile.education }}</li>
+                <li><strong>Certifications:</strong> {{ profile.certifications }}</li>
+                <li><strong>Visibility:</strong> {{ profile.get_visibility_display }}</li>
+                <li><strong>Open to Work:</strong> {{ profile.open_to_work|yesno:"Yes,No" }}</li>
+                <li><strong>Preferred Salary Min:</strong> {{ profile.preferred_salary_min }}</li>
+                <li><strong>Preferred Salary Max:</strong> {{ profile.preferred_salary_max }}</li>
+                <li><strong>Created At:</strong> {{ profile.created_at }}</li>
+                <li><strong>Updated At:</strong> {{ profile.updated_at }}</li>
+            </ul>
+        {% endif %}
+        <a href="{% url 'profiles:edit_profile' %}" class="btn btn-primary">Edit Profile</a>
+    {% else %}
+        <p>No profile information available.</p>
+    {% endif %}
+{% endblock %}
