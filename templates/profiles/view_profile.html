@@ -69,6 +69,9 @@
             </ul>
         {% endif %}
         <a href="{% url 'profiles:edit_profile' %}" class="btn btn-primary">Edit Profile</a>
+        {% if not profile.name and request.user.user_type == 'job_seeker' %}
+            <a href="{% url 'profiles:recommend_jobs' %}" class="btn btn-success ms-2">Get Recommendations</a>
+        {% endif %}
     {% else %}
         <p>No profile information available.</p>
     {% endif %}

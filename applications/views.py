@@ -7,6 +7,9 @@ from django.core.exceptions import ValidationError
 from jobs.models import Job
 from .models import Application
 from .forms import ApplicationForm
+from django.views.decorators.http import require_POST
+from django.http import HttpResponseForbidden, HttpResponseRedirect
+from django.shortcuts import render
 
 class JobSeekerRequiredMixin(UserPassesTestMixin):
     def test_func(self):
@@ -74,3 +77,32 @@ class WithdrawApplicationView(LoginRequiredMixin, JobSeekerRequiredMixin, Delete
     def delete(self, request, *args, **kwargs):
         messages.success(request, 'Your application has been withdrawn.')
         return super().delete(request, *args, **kwargs)
+
+
+@require_POST
+def update_application_status(request, pk):
+    """Allow a recruiter who posted the job to update an application's status.
+
+    Expects POST with 'status' and optional 'notes'.
+    """
+    application = get_object_or_404(Application, pk=pk)
+    job = application.job
+
+    # Only the recruiter who posted the job (or users of type 'recruiter') can update
+    user = request.user
+    if not user.is_authenticated or getattr(user, 'user_type', '') != 'recruiter':
+        return HttpResponseForbidden('Only recruiters can update application status.')
+
+    # Ensure the recruiter owns the job
+    if job.posted_by != user:
+        return HttpResponseForbidden('You do not have permission to modify this application.')
+
+    status = request.POST.get('status')
+    notes = request.POST.get('notes', '')
+    if status and status in dict(Application.STATUS_CHOICES):
+        application.status = status
+        application.notes = notes
+        application.save()
+
+    # Redirect back to the job applications page using named URL
+    return redirect('jobs:job_applications', pk=job.pk)

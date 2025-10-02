@@ -11,7 +11,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
     path('jobs/', include('jobs.urls')),
-    path('applications/', include('applications.urls')),
+    path('applications/', include(('applications.urls', 'applications'), namespace='applications')),
     path('users/', include('users.urls')),
     path('profile-completion/', profile_completion_required, name='profile_completion'),
     path('', TemplateView.as_view(template_name='home.html'), name='home'),

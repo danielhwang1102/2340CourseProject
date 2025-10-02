@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Job Recommendations</h2>
+  {% if not profile %}
+    <div class="alert alert-warning">You don't have a profile yet. Create one to receive personalized recommendations.</div>
+  {% endif %}
+
+  {% if jobs %}
+    <p>We found {{ jobs.count }} job(s) matching your skills. Showing top matches first.</p>
+    <div class="list-group">
+      {% for job in jobs %}
+        <a href="{{ job.get_absolute_url }}" class="list-group-item list-group-item-action">
+          <div class="d-flex w-100 justify-content-between">
+            <h5 class="mb-1">{{ job.title }}</h5>
+            <small class="text-muted">Matches: {{ job.match_count }}</small>
+          </div>
+          <p class="mb-1">{{ job.get_company_name }} — {{ job.location }} — {{ job.get_experience_level_display }}</p>
+          {% if job.required_skills.all %}
+            <small>Required skills: {% for s in job.required_skills.all|slice:":5" %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</small>
+          {% endif %}
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="alert alert-info">No recommended jobs found based on your current skills.</div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -4,10 +4,48 @@
 {% for application in applications %}
 <div class="card mb-3">
     <div class="card-body">
-        <h5>{{ application.job.title }}</h5>
-        <h6 class="text-muted">{{ application.job.get_company_name }}</h6>
-        <p>Applied: {{ application.applied_date|date:"M d, Y" }}</p>
-        <span class="badge bg-info">{{ application.get_status_display }}</span>
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h5>{{ application.job.title }}</h5>
+                <h6 class="text-muted">{{ application.job.get_company_name }}</h6>
+            </div>
+            <div>
+                {% if application.status == 'applied' %}
+            <span class="badge bg-info">{{ application.get_status_display }}</span>
+        {% elif application.status == 'review' %}
+            <span class="badge bg-warning text-dark">{{ application.get_status_display }}</span>
+        {% elif application.status == 'interview_scheduled' %}
+            <span class="badge bg-primary">{{ application.get_status_display }}</span>
+        {% elif application.status == 'interview_completed' %}
+            <span class="badge bg-secondary">{{ application.get_status_display }}</span>
+        {% elif application.status == 'offer' %}
+            <span class="badge bg-success">{{ application.get_status_display }}</span>
+        {% elif application.status == 'accepted' %}
+            <span class="badge bg-success">{{ application.get_status_display }}</span>
+        {% elif application.status == 'rejected' %}
+            <span class="badge bg-danger">{{ application.get_status_display }}</span>
+        {% elif application.status == 'withdrawn' %}
+            <span class="badge bg-secondary">{{ application.get_status_display }}</span>
+        {% else %}
+            <span class="badge bg-secondary">{{ application.get_status_display }}</span>
+        {% endif %}
+            </div>
+        </div>
+
+        <p class="mt-2"><strong>Status:</strong> {{ application.get_status_display }}</p>
+
+        {% if application.notes %}
+            <p class="mt-2"><strong>Notes:</strong> {{ application.notes }}</p>
+        {% endif %}
+
+    <p class="text-muted">Last updated: {{ application.last_updated|date:"M d, Y H:i" }}</p>
+
+        <div class="mt-2">
+            <a href="{% url 'jobs:job_detail' application.job.pk %}" class="btn btn-outline-primary btn-sm">View Job</a>
+            {% if application.status != 'withdrawn' %}
+                <a href="{% url 'applications:withdraw' application.pk %}" class="btn btn-outline-danger btn-sm ms-2">Withdraw</a>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% empty %}
