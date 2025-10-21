@@ -1,9 +1,12 @@
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
+from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.db.models import Q, Count
+from django.http import JsonResponse
+import json
 
 from .models import Job
 from .forms import JobForm, JobFilterForm
@@ -186,3 +189,88 @@ class JobApplicationsView(LoginRequiredMixin, RecruiterRequiredMixin, DetailView
             job=self.object
         ).select_related('applicant').order_by('-applied_date')
         return context
+    
+class JobMapView(TemplateView):
+    template_name = 'jobs/job_map.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Get jobs with coordinates
+        jobs_with_coords = Job.objects.filter(
+            is_active=True,
+            latitude__isnull=False,
+            longitude__isnull=False
+        ).select_related('posted_by')[:200]  # Limit for performance
+
+        # Prepare data for JavaScript
+        job_data = []
+        for job in jobs_with_coords:
+            job_data.append({
+                'id': job.id,
+                'title': job.title,
+                'company': job.get_company_name(),
+                'location': job.location,
+                'latitude': float(job.latitude),
+                'longitude': float(job.longitude),
+                'job_type': job.get_job_type_display(),
+                'location_type': job.get_location_type_display(),
+                'salary': job.get_salary_display(),
+                'url': job.get_absolute_url(),
+            })
+
+        context['jobs_json'] = json.dumps(job_data)
+        context['total_jobs'] = len(job_data)
+        
+        # Calculate center point (average of all job locations)
+        if job_data:
+            avg_lat = sum(j['latitude'] for j in job_data) / len(job_data)
+            avg_lng = sum(j['longitude'] for j in job_data) / len(job_data)
+            context['center_lat'] = avg_lat
+            context['center_lng'] = avg_lng
+        else:
+            context['center_lat'] = 37.7749  # Default to San Francisco
+            context['center_lng'] = -122.4194
+        
+        return context
+
+
+class JobMapDataAPIView(LoginRequiredMixin, View):
+    """AJAX endpoint for filtering jobs on map by distance"""
+    
+    def get(self, request):
+        user_lat = request.GET.get('lat')
+        user_lng = request.GET.get('lng')
+        radius_km = request.GET.get('radius', 25)  # Default 25km
+        
+        try:
+            user_lat = float(user_lat)
+            user_lng = float(user_lng)
+            radius_km = float(radius_km)
+        except (TypeError, ValueError):
+            return JsonResponse({'error': 'Invalid coordinates'}, status=400)
+        
+        # Get all jobs with coordinates
+        jobs = Job.objects.filter(
+            is_active=True,
+            latitude__isnull=False,
+            longitude__isnull=False
+        )
+        
+        # Filter by distance
+        filtered_jobs = []
+        for job in jobs:
+            distance = job.get_distance_from(user_lat, user_lng)
+            if distance and distance <= radius_km:
+                filtered_jobs.append({
+                    'id': job.id,
+                    'title': job.title,
+                    'company': job.get_company_name(),
+                    'location': job.location,
+                    'latitude': float(job.latitude),
+                    'longitude': float(job.longitude),
+                    'distance': round(distance, 2),
+                    'url': job.get_absolute_url(),
+                })
+        
+        return JsonResponse({'jobs': filtered_jobs})

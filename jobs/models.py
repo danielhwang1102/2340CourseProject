@@ -63,12 +63,17 @@ class Job(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # Map attributes
+    location = models.CharField(max_length=100)
+    latitude = models.FloatField(blank=True, null=True)
+    longitude = models.FloatField(blank=True, null=True)
+
     def get_company_name(self):
         """Return company name whether from Company object or string field"""
         return self.company.name if self.company else self.company_name
 
     def get_absolute_url(self):
-        return reverse('job_detail', kwargs={'pk': self.pk})
+        return reverse('jobs:job_detail', kwargs={'pk': self.pk})
 
     def __str__(self):
         return f"{self.title} at {self.get_company_name()}"
@@ -114,3 +119,33 @@ class Job(models.Model):
             'JPY': '¥',
         }
         return currency_symbols.get(self.salary_currency, self.salary_currency)
+    
+    # map related methods
+    def save(self, *args, **kwargs):
+        # Auto-geocode if location changed and coordinates are missing
+        if self.location and (not self.latitude or not self.longitude):
+            try:
+                from geopy.geocoders import Nominatim
+                geolocator = Nominatim(user_agent="jobplatform")
+                location_data = geolocator.geocode(self.location, timeout=10)
+                if location_data:
+                    self.latitude = location_data.latitude
+                    self.longitude = location_data.longitude
+            except Exception as e:
+                # Log error but don't fail the save
+                print(f"Geocoding error: {e}")
+        super().save(*args, **kwargs)
+
+    def get_distance_from(self, latitude, longitude):
+        """Calculate distance from given coordinates in kilometers."""
+        if self.latitude and self.longitude:
+            from math import radians, cos, sin, asin, sqrt
+            
+            lat1, lon1, lat2, lon2 = map(radians, [self.latitude, self.longitude, latitude, longitude])
+            dlat = lat2 - lat1
+            dlon = lon2 - lon1
+            a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+            c = 2 * asin(sqrt(a))
+            r = 6371  # Earth radius in kilometers
+            return c * r
+        return None

@@ -1,0 +1,301 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Job Map - Find Jobs Near You{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #job-map {
+        height: 600px;
+        width: 100%;
+        border-radius: 8px;
+        border: 2px solid #ddd;
+    }
+    .map-controls {
+        margin-bottom: 20px;
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+    }
+    .leaflet-popup-content {
+        min-width: 200px;
+    }
+    .popup-title {
+        font-weight: bold;
+        color: #0d6efd;
+        margin-bottom: 5px;
+    }
+    .popup-company {
+        color: #6c757d;
+        margin-bottom: 5px;
+    }
+    .info-box {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1><i class="fas fa-map-marked-alt"></i> Job Map</h1>
+    <p class="text-muted">Explore {{ total_jobs }} job opportunities on the map</p>
+
+    <!-- Info Box -->
+    <div class="info-box">
+        <div class="row">
+            <div class="col-md-4">
+                <i class="fas fa-briefcase text-primary"></i>
+                <strong>{{ total_jobs }}</strong> jobs displayed
+            </div>
+            <div class="col-md-4">
+                <i class="fas fa-map-marker-alt text-success"></i>
+                Click markers to view details
+            </div>
+            <div class="col-md-4">
+                <i class="fas fa-filter text-warning"></i>
+                Use controls to filter by distance
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Controls -->
+    <div class="map-controls">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">
+                    <i class="fas fa-search-location"></i> Search Location
+                </label>
+                <input type="text" id="location-search" class="form-control" 
+                       placeholder="Enter city or address...">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">
+                    <i class="fas fa-ruler-horizontal"></i> Distance Radius
+                </label>
+                <select id="radius-select" class="form-select">
+                    <option value="10">Within 10 km (6 mi)</option>
+                    <option value="25" selected>Within 25 km (16 mi)</option>
+                    <option value="50">Within 50 km (31 mi)</option>
+                    <option value="100">Within 100 km (62 mi)</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <button id="use-my-location" class="btn btn-primary w-100">
+                    <i class="fas fa-crosshairs"></i> Use My Location
+                </button>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <button id="reset-map" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-redo"></i> Reset
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Container -->
+    <div id="job-map"></div>
+
+    <!-- Results Info -->
+    <div class="mt-3 text-muted text-center">
+        <small id="results-info">Showing all jobs</small>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // Initialize map
+    const map = L.map('job-map').setView([{{ center_lat }}, {{ center_lng }}], 10);
+    
+    // Add OpenStreetMap tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19
+    }).addTo(map);
+
+    // Parse job data from Django
+    const allJobs = {{ jobs_json|safe }};
+    let currentMarkers = [];
+    let userMarker = null;
+    let radiusCircle = null;
+
+    // Function to create custom marker icon
+    function createMarkerIcon(color = 'blue') {
+        return L.divIcon({
+            className: 'custom-marker',
+            html: `<i class="fas fa-map-marker-alt fa-2x" style="color: ${color};"></i>`,
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34]
+        });
+    }
+
+    // Function to display jobs on map
+    function displayJobs(jobs) {
+        // Clear existing markers
+        currentMarkers.forEach(marker => map.removeLayer(marker));
+        currentMarkers = [];
+
+        // Add markers for each job
+        jobs.forEach(job => {
+            const marker = L.marker([job.latitude, job.longitude])
+                .bindPopup(`
+                    <div class="popup-content">
+                        <div class="popup-title">${job.title}</div>
+                        <div class="popup-company"><i class="fas fa-building"></i> ${job.company}</div>
+                        <div><i class="fas fa-map-marker-alt"></i> ${job.location}</div>
+                        <div><i class="fas fa-briefcase"></i> ${job.job_type}</div>
+                        ${job.distance ? `<div><i class="fas fa-route"></i> ${job.distance} km away</div>` : ''}
+                        <div class="mt-2">
+                            <a href="${job.url}" class="btn btn-sm btn-primary">
+                                View Details <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                `);
+            
+            marker.addTo(map);
+            currentMarkers.push(marker);
+        });
+
+        // Update results info
+        document.getElementById('results-info').textContent = 
+            `Showing ${jobs.length} job${jobs.length !== 1 ? 's' : ''}`;
+    }
+
+    // Initial display
+    displayJobs(allJobs);
+
+    // Use My Location button
+    document.getElementById('use-my-location').addEventListener('click', function() {
+        if (navigator.geolocation) {
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting location...';
+            
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    filterByDistance(lat, lng);
+                    this.innerHTML = '<i class="fas fa-crosshairs"></i> Use My Location';
+                },
+                (error) => {
+                    alert('Unable to get your location. Please enter it manually.');
+                    this.innerHTML = '<i class="fas fa-crosshairs"></i> Use My Location';
+                }
+            );
+        } else {
+            alert('Geolocation is not supported by your browser.');
+        }
+    });
+
+    // Filter jobs by distance
+    function filterByDistance(userLat, userLng) {
+        const radius = parseFloat(document.getElementById('radius-select').value);
+        
+        // Remove existing user marker and circle
+        if (userMarker) map.removeLayer(userMarker);
+        if (radiusCircle) map.removeLayer(radiusCircle);
+        
+        // Add user location marker
+        userMarker = L.marker([userLat, userLng], {
+            icon: createMarkerIcon('red')
+        }).bindPopup('Your Location').addTo(map);
+        
+        // Draw radius circle
+        radiusCircle = L.circle([userLat, userLng], {
+            color: 'blue',
+            fillColor: '#3388ff',
+            fillOpacity: 0.1,
+            radius: radius * 1000  // Convert km to meters
+        }).addTo(map);
+        
+        // Calculate distances and filter
+        const filteredJobs = allJobs.map(job => {
+            const distance = calculateDistance(userLat, userLng, job.latitude, job.longitude);
+            return { ...job, distance: distance };
+        }).filter(job => job.distance <= radius);
+        
+        // Display filtered jobs
+        displayJobs(filteredJobs);
+        
+        // Fit map to show all markers
+        if (filteredJobs.length > 0) {
+            const bounds = L.latLngBounds([
+                [userLat, userLng],
+                ...filteredJobs.map(j => [j.latitude, j.longitude])
+            ]);
+            map.fitBounds(bounds, { padding: [50, 50] });
+        } else {
+            map.setView([userLat, userLng], 12);
+        }
+    }
+
+    // Calculate distance between two points (Haversine formula)
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371; // Earth's radius in km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    }
+
+    // Location search functionality
+    document.getElementById('location-search').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            const address = this.value;
+            if (address) {
+                // Use Nominatim geocoding API
+                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.length > 0) {
+                            const lat = parseFloat(data[0].lat);
+                            const lng = parseFloat(data[0].lon);
+                            filterByDistance(lat, lng);
+                        } else {
+                            alert('Location not found. Please try a different address.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Geocoding error:', error);
+                        alert('Error searching for location.');
+                    });
+            }
+        }
+    });
+
+    // Reset map
+    document.getElementById('reset-map').addEventListener('click', function() {
+        // Remove user marker and circle
+        if (userMarker) map.removeLayer(userMarker);
+        if (radiusCircle) map.removeLayer(radiusCircle);
+        
+        // Reset to all jobs
+        displayJobs(allJobs);
+        map.setView([{{ center_lat }}, {{ center_lng }}], 10);
+        
+        // Clear search input
+        document.getElementById('location-search').value = '';
+    });
+
+    // Update radius when changed
+    document.getElementById('radius-select').addEventListener('change', function() {
+        if (userMarker) {
+            const userLatLng = userMarker.getLatLng();
+            filterByDistance(userLatLng.lat, userLatLng.lng);
+        }
+    });
+</script>
+{% endblock %}
