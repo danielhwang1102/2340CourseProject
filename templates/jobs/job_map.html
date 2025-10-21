@@ -10,101 +10,212 @@
         height: 600px;
         width: 100%;
         border-radius: 8px;
-        border: 2px solid #ddd;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     .map-controls {
-        margin-bottom: 20px;
-        background: #f8f9fa;
-        padding: 15px;
+        background: white;
+        padding: 20px;
         border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
     }
     .leaflet-popup-content {
         min-width: 200px;
     }
     .popup-title {
         font-weight: bold;
-        color: #0d6efd;
-        margin-bottom: 5px;
+        font-size: 16px;
+        margin-bottom: 8px;
+        color: #333;
     }
     .popup-company {
-        color: #6c757d;
+        color: #666;
         margin-bottom: 5px;
     }
     .info-box {
+        background: #e7f3ff;
+        border-left: 4px solid #2196F3;
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+    }
+    .error-message {
+        background: #ffebee;
+        border-left: 4px solid #f44336;
+        padding: 15px;
+        border-radius: 4px;
+        margin-top: 10px;
+        display: none;
+    }
+    .success-message {
+        background: #e8f5e9;
+        border-left: 4px solid #4caf50;
+        padding: 15px;
+        border-radius: 4px;
+        margin-top: 10px;
+        display: none;
+    }
+    .distance-legend {
         background: white;
         padding: 15px;
         border-radius: 8px;
-        border: 1px solid #ddd;
-        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-top: 20px;
+        display: none;
+    }
+    .distance-legend h5 {
+        margin-bottom: 10px;
+        font-size: 14px;
+        font-weight: bold;
+    }
+    .legend-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    .legend-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        margin-right: 10px;
+        border: 2px solid;
+    }
+    .jobs-list {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-top: 20px;
+        max-height: 400px;
+        overflow-y: auto;
+        display: none;
+    }
+    .job-item {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .job-item:hover {
+        background: #f5f5f5;
+    }
+    .job-item:last-child {
+        border-bottom: none;
+    }
+    .job-distance-badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: bold;
+        margin-left: 10px;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1><i class="fas fa-map-marked-alt"></i> Job Map</h1>
-    <p class="text-muted">Explore {{ total_jobs }} job opportunities on the map</p>
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-lg-9">
+            <h1><i class="fas fa-map-marked-alt"></i> Job Map</h1>
+            <p class="text-muted">Explore {{ total_jobs }} job opportunities on the map</p>
 
-    <!-- Info Box -->
-    <div class="info-box">
-        <div class="row">
-            <div class="col-md-4">
-                <i class="fas fa-briefcase text-primary"></i>
-                <strong>{{ total_jobs }}</strong> jobs displayed
+            <!-- Info Box -->
+            <div class="info-box">
+                <i class="fas fa-info-circle"></i>
+                <strong>Tip:</strong> Click on markers to view job details. Enter your location to see distance circles and filter by distance!
             </div>
-            <div class="col-md-4">
-                <i class="fas fa-map-marker-alt text-success"></i>
-                Click markers to view details
+
+            <!-- Map Controls -->
+            <div class="map-controls">
+                <div class="row align-items-end">
+                    <div class="col-md-6">
+                        <label for="user-location" class="form-label">
+                            <i class="fas fa-location-arrow"></i> Your Location
+                        </label>
+                        <div class="input-group">
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="user-location" 
+                                placeholder="Enter city, address, or zip code"
+                            >
+                            <button class="btn btn-primary" type="button" id="search-btn">
+                                <i class="fas fa-search"></i> Search
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="radius" class="form-label">
+                            <i class="fas fa-ruler"></i> Max Search Radius (km)
+                        </label>
+                        <select class="form-select" id="radius">
+                            <option value="10">10 km</option>
+                            <option value="25">25 km</option>
+                            <option value="50" selected>50 km</option>
+                            <option value="100">100 km</option>
+                            <option value="200">200 km</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-secondary w-100" id="reset-btn">
+                            <i class="fas fa-redo"></i> Reset
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Error Message -->
+                <div class="error-message" id="error-message">
+                    <i class="fas fa-exclamation-circle"></i> <strong>Invalid address:</strong> Could not find the location you entered. Please try again.
+                </div>
+                
+                <!-- Success Message -->
+                <div class="success-message" id="success-message">
+                    <i class="fas fa-check-circle"></i> <span id="success-text"></span>
+                </div>
             </div>
-            <div class="col-md-4">
-                <i class="fas fa-filter text-warning"></i>
-                Use controls to filter by distance
+
+            <!-- Results Info -->
+            <div class="mb-3">
+                <span class="badge bg-info" id="results-info">Showing all {{ total_jobs }} jobs</span>
+            </div>
+
+            <!-- Map Container -->
+            <div id="job-map"></div>
+
+            <!-- Distance Legend -->
+            <div class="distance-legend" id="distance-legend">
+                <h5><i class="fas fa-map"></i> Distance Zones</h5>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: rgba(76, 175, 80, 0.2); border-color: #4caf50;"></div>
+                    <span>0-10 km (Very Close)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: rgba(33, 150, 243, 0.2); border-color: #2196F3;"></div>
+                    <span>10-25 km (Close)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: rgba(255, 152, 0, 0.2); border-color: #FF9800;"></div>
+                    <span>25-50 km (Moderate)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: rgba(255, 193, 7, 0.2); border-color: #FFC107;"></div>
+                    <span>50-100 km (Far)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: rgba(244, 67, 54, 0.2); border-color: #f44336;"></div>
+                    <span>100+ km (Very Far)</span>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Map Controls -->
-    <div class="map-controls">
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label">
-                    <i class="fas fa-search-location"></i> Search Location
-                </label>
-                <input type="text" id="location-search" class="form-control" 
-                       placeholder="Enter city or address...">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">
-                    <i class="fas fa-ruler-horizontal"></i> Distance Radius
-                </label>
-                <select id="radius-select" class="form-select">
-                    <option value="10">Within 10 km (6 mi)</option>
-                    <option value="25" selected>Within 25 km (16 mi)</option>
-                    <option value="50">Within 50 km (31 mi)</option>
-                    <option value="100">Within 100 km (62 mi)</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">&nbsp;</label>
-                <button id="use-my-location" class="btn btn-primary w-100">
-                    <i class="fas fa-crosshairs"></i> Use My Location
-                </button>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">&nbsp;</label>
-                <button id="reset-map" class="btn btn-outline-secondary w-100">
-                    <i class="fas fa-redo"></i> Reset
-                </button>
+        <!-- Jobs List Sidebar -->
+        <div class="col-lg-3">
+            <div class="jobs-list" id="jobs-list">
+                <h5><i class="fas fa-list"></i> Jobs by Distance</h5>
+                <div id="jobs-list-content"></div>
             </div>
         </div>
-    </div>
-
-    <!-- Map Container -->
-    <div id="job-map"></div>
-
-    <!-- Results Info -->
-    <div class="mt-3 text-muted text-center">
-        <small id="results-info">Showing all jobs</small>
     </div>
 </div>
 {% endblock %}
@@ -115,31 +226,38 @@
     // Initialize map
     const map = L.map('job-map').setView([{{ center_lat }}, {{ center_lng }}], 10);
     
-    // Add OpenStreetMap tile layer
+    // Add tile layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-        maxZoom: 19
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // Parse job data from Django
+    // Store all jobs and current markers
     const allJobs = {{ jobs_json|safe }};
     let currentMarkers = [];
     let userMarker = null;
-    let radiusCircle = null;
+    let distanceCircles = [];  // Store multiple circles
 
-    // Function to create custom marker icon
-    function createMarkerIcon(color = 'blue') {
-        return L.divIcon({
-            className: 'custom-marker',
-            html: `<i class="fas fa-map-marker-alt fa-2x" style="color: ${color};"></i>`,
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34]
-        });
+    // Define distance zones with colors
+    const distanceZones = [
+        { radius: 10, color: '#4caf50', label: '0-10 km', fillOpacity: 0.15 },      // Green
+        { radius: 25, color: '#2196F3', label: '10-25 km', fillOpacity: 0.12 },     // Blue
+        { radius: 50, color: '#FF9800', label: '25-50 km', fillOpacity: 0.1 },      // Orange
+        { radius: 100, color: '#FFC107', label: '50-100 km', fillOpacity: 0.08 },   // Yellow
+        { radius: 200, color: '#f44336', label: '100+ km', fillOpacity: 0.06 }      // Red
+    ];
+
+    // Function to get color based on distance
+    function getColorByDistance(distance) {
+        if (distance <= 10) return '#4caf50';      // Green
+        if (distance <= 25) return '#2196F3';      // Blue
+        if (distance <= 50) return '#FF9800';      // Orange
+        if (distance <= 100) return '#FFC107';     // Yellow
+        return '#f44336';                          // Red
     }
 
-// Function to display jobs on map
-    function displayJobs(jobs) {
+    // Function to display jobs on map
+    function displayJobs(jobs, userLocation = null) {
         // Clear existing markers
         currentMarkers.forEach(marker => map.removeLayer(marker));
         currentMarkers = [];
@@ -153,7 +271,7 @@
                         <div class="popup-company"><i class="fas fa-building"></i> ${job.company}</div>
                         <div><i class="fas fa-map-marker-alt"></i> ${job.short_location}</div>
                         <div><i class="fas fa-briefcase"></i> ${job.job_type}</div>
-                        ${job.distance ? `<div><i class="fas fa-route"></i> ${job.distance} km away</div>` : ''}
+                        ${job.distance ? `<div><i class="fas fa-route"></i> <strong>${job.distance} km away</strong></div>` : ''}
                         <div class="mt-2">
                             <a href="${job.url}" class="btn btn-sm btn-primary">
                                 View Details <i class="fas fa-arrow-right"></i>
@@ -169,77 +287,179 @@
         // Update results info
         document.getElementById('results-info').textContent = 
             `Showing ${jobs.length} job${jobs.length !== 1 ? 's' : ''}`;
+
+        // Update jobs list
+        if (userLocation) {
+            displayJobsList(jobs);
+        }
     }
 
-    // Initial display
+    // Function to display jobs list sorted by distance
+    function displayJobsList(jobs) {
+        const listContainer = document.getElementById('jobs-list-content');
+        const jobsList = document.getElementById('jobs-list');
+        
+        if (jobs.length === 0) {
+            listContainer.innerHTML = '<p class="text-muted">No jobs found in this area.</p>';
+            jobsList.style.display = 'block';
+            return;
+        }
+
+        listContainer.innerHTML = jobs.map(job => {
+            const color = getColorByDistance(parseFloat(job.distance));
+            return `
+                <div class="job-item" onclick="window.location.href='${job.url}'">
+                    <div>
+                        <strong>${job.title}</strong>
+                        <span class="job-distance-badge" style="background-color: ${color}; color: white;">
+                            ${job.distance} km
+                        </span>
+                    </div>
+                    <small class="text-muted">${job.company}</small><br>
+                    <small class="text-muted"><i class="fas fa-map-marker-alt"></i> ${job.short_location}</small>
+                </div>
+            `;
+        }).join('');
+
+        jobsList.style.display = 'block';
+    }
+
+    // Initial display of all jobs
     displayJobs(allJobs);
 
-    // Use My Location button
-    document.getElementById('use-my-location').addEventListener('click', function() {
-        if (navigator.geolocation) {
-            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Getting location...';
-            
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const lat = position.coords.latitude;
-                    const lng = position.coords.longitude;
-                    
-                    filterByDistance(lat, lng);
-                    this.innerHTML = '<i class="fas fa-crosshairs"></i> Use My Location';
-                },
-                (error) => {
-                    alert('Unable to get your location. Please enter it manually.');
-                    this.innerHTML = '<i class="fas fa-crosshairs"></i> Use My Location';
+    // Search button click handler
+    document.getElementById('search-btn').addEventListener('click', function() {
+        const locationInput = document.getElementById('user-location').value.trim();
+        const errorMessage = document.getElementById('error-message');
+        const successMessage = document.getElementById('success-message');
+        
+        // Hide previous messages
+        errorMessage.style.display = 'none';
+        successMessage.style.display = 'none';
+        
+        if (!locationInput) {
+            errorMessage.textContent = 'Please enter a location.';
+            errorMessage.style.display = 'block';
+            return;
+        }
+
+        // Geocode the user's location using Nominatim
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationInput)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.length === 0) {
+                    // No results found
+                    errorMessage.innerHTML = '<i class="fas fa-exclamation-circle"></i> <strong>Invalid address:</strong> Could not find the location you entered. Please try again.';
+                    errorMessage.style.display = 'block';
+                    return;
                 }
-            );
-        } else {
-            alert('Geolocation is not supported by your browser.');
+
+                // Get the first result
+                const location = data[0];
+                const userLat = parseFloat(location.lat);
+                const userLng = parseFloat(location.lon);
+                const maxRadius = parseFloat(document.getElementById('radius').value);
+
+                // Show success message
+                successMessage.innerHTML = `<i class="fas fa-check-circle"></i> Found location: ${location.display_name}`;
+                successMessage.style.display = 'block';
+
+                // Remove existing user marker and circles
+                if (userMarker) {
+                    map.removeLayer(userMarker);
+                }
+                distanceCircles.forEach(circle => map.removeLayer(circle));
+                distanceCircles = [];
+
+                // Add user location marker
+                userMarker = L.marker([userLat, userLng], {
+                    icon: L.icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowSize: [41, 41]
+                    })
+                }).addTo(map);
+
+                userMarker.bindPopup('<strong>Your Location</strong>').openPopup();
+
+                // Draw multi-level distance circles (from largest to smallest)
+                distanceZones
+                    .filter(zone => zone.radius <= maxRadius)
+                    .reverse()
+                    .forEach(zone => {
+                        const circle = L.circle([userLat, userLng], {
+                            color: zone.color,
+                            fillColor: zone.color,
+                            fillOpacity: zone.fillOpacity,
+                            radius: zone.radius * 1000,  // Convert km to meters
+                            weight: 2
+                        }).addTo(map);
+                        distanceCircles.push(circle);
+                    });
+
+                // Show distance legend
+                document.getElementById('distance-legend').style.display = 'block';
+
+                // Fit map to show all circles
+                if (distanceCircles.length > 0) {
+                    map.fitBounds(distanceCircles[0].getBounds());
+                }
+
+                // Filter jobs by distance and sort
+                const filteredJobs = allJobs
+                    .map(job => {
+                        const distance = calculateDistance(userLat, userLng, job.latitude, job.longitude);
+                        return { ...job, distance: distance.toFixed(2) };
+                    })
+                    .filter(job => parseFloat(job.distance) <= maxRadius)
+                    .sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+
+                // Display filtered jobs
+                displayJobs(filteredJobs, { lat: userLat, lng: userLng });
+
+                if (filteredJobs.length === 0) {
+                    document.getElementById('results-info').textContent = 'No jobs found within the selected radius';
+                }
+            })
+            .catch(error => {
+                console.error('Geocoding error:', error);
+                errorMessage.innerHTML = '<i class="fas fa-exclamation-circle"></i> <strong>Error:</strong> Unable to search location. Please try again.';
+                errorMessage.style.display = 'block';
+            });
+    });
+
+    // Allow Enter key to trigger search
+    document.getElementById('user-location').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            document.getElementById('search-btn').click();
         }
     });
 
-    // Filter jobs by distance
-    function filterByDistance(userLat, userLng) {
-        const radius = parseFloat(document.getElementById('radius-select').value);
+    // Reset button
+    document.getElementById('reset-btn').addEventListener('click', function() {
+        document.getElementById('user-location').value = '';
+        document.getElementById('radius').value = '50';
+        document.getElementById('error-message').style.display = 'none';
+        document.getElementById('success-message').style.display = 'none';
+        document.getElementById('distance-legend').style.display = 'none';
+        document.getElementById('jobs-list').style.display = 'none';
         
-        // Remove existing user marker and circle
-        if (userMarker) map.removeLayer(userMarker);
-        if (radiusCircle) map.removeLayer(radiusCircle);
-        
-        // Add user location marker
-        userMarker = L.marker([userLat, userLng], {
-            icon: createMarkerIcon('red')
-        }).bindPopup('Your Location').addTo(map);
-        
-        // Draw radius circle
-        radiusCircle = L.circle([userLat, userLng], {
-            color: 'blue',
-            fillColor: '#3388ff',
-            fillOpacity: 0.1,
-            radius: radius * 1000  // Convert km to meters
-        }).addTo(map);
-        
-        // Calculate distances and filter
-        const filteredJobs = allJobs.map(job => {
-            const distance = calculateDistance(userLat, userLng, job.latitude, job.longitude);
-            return { ...job, distance: distance };
-        }).filter(job => job.distance <= radius);
-        
-        // Display filtered jobs
-        displayJobs(filteredJobs);
-        
-        // Fit map to show all markers
-        if (filteredJobs.length > 0) {
-            const bounds = L.latLngBounds([
-                [userLat, userLng],
-                ...filteredJobs.map(j => [j.latitude, j.longitude])
-            ]);
-            map.fitBounds(bounds, { padding: [50, 50] });
-        } else {
-            map.setView([userLat, userLng], 12);
+        if (userMarker) {
+            map.removeLayer(userMarker);
+            userMarker = null;
         }
-    }
+        
+        distanceCircles.forEach(circle => map.removeLayer(circle));
+        distanceCircles = [];
+        
+        displayJobs(allJobs);
+        map.setView([{{ center_lat }}, {{ center_lng }}], 10);
+    });
 
-    // Calculate distance between two points (Haversine formula)
+    // Haversine formula to calculate distance between two points
     function calculateDistance(lat1, lon1, lat2, lon2) {
         const R = 6371; // Earth's radius in km
         const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -250,52 +470,5 @@
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         return R * c;
     }
-
-    // Location search functionality
-    document.getElementById('location-search').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            const address = this.value;
-            if (address) {
-                // Use Nominatim geocoding API
-                fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.length > 0) {
-                            const lat = parseFloat(data[0].lat);
-                            const lng = parseFloat(data[0].lon);
-                            filterByDistance(lat, lng);
-                        } else {
-                            alert('Location not found. Please try a different address.');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Geocoding error:', error);
-                        alert('Error searching for location.');
-                    });
-            }
-        }
-    });
-
-    // Reset map
-    document.getElementById('reset-map').addEventListener('click', function() {
-        // Remove user marker and circle
-        if (userMarker) map.removeLayer(userMarker);
-        if (radiusCircle) map.removeLayer(radiusCircle);
-        
-        // Reset to all jobs
-        displayJobs(allJobs);
-        map.setView([{{ center_lat }}, {{ center_lng }}], 10);
-        
-        // Clear search input
-        document.getElementById('location-search').value = '';
-    });
-
-    // Update radius when changed
-    document.getElementById('radius-select').addEventListener('change', function() {
-        if (userMarker) {
-            const userLatLng = userMarker.getLatLng();
-            filterByDistance(userLatLng.lat, userLatLng.lng);
-        }
-    });
 </script>
 {% endblock %}
