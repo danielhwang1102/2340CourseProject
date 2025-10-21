@@ -138,7 +138,7 @@
         });
     }
 
-    // Function to display jobs on map
+// Function to display jobs on map
     function displayJobs(jobs) {
         // Clear existing markers
         currentMarkers.forEach(marker => map.removeLayer(marker));
@@ -151,7 +151,7 @@
                     <div class="popup-content">
                         <div class="popup-title">${job.title}</div>
                         <div class="popup-company"><i class="fas fa-building"></i> ${job.company}</div>
-                        <div><i class="fas fa-map-marker-alt"></i> ${job.location}</div>
+                        <div><i class="fas fa-map-marker-alt"></i> ${job.short_location}</div>
                         <div><i class="fas fa-briefcase"></i> ${job.job_type}</div>
                         ${job.distance ? `<div><i class="fas fa-route"></i> ${job.distance} km away</div>` : ''}
                         <div class="mt-2">

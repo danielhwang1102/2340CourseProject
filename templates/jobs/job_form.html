@@ -50,8 +50,34 @@
                                 <fieldset class="mb-4">
                                     <legend class="h5">Company & Location</legend>
                                     {{ form.company_name|as_crispy_field }}
-                                    {{ form.location|as_crispy_field }}
+                                    
+                                    <!-- UPDATED LOCATION SECTION -->
                                     {{ form.location_type|as_crispy_field }}
+                                    
+                                    <div class="alert alert-info small mb-3">
+                                        <i class="fas fa-info-circle"></i> 
+                                        Detailed address helps job seekers find your position on the map.
+                                        For remote jobs, city and country are sufficient.
+                                    </div>
+                                    
+                                    {{ form.street_address|as_crispy_field }}
+                                    
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            {{ form.city|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            {{ form.state_province|as_crispy_field }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            {{ form.postal_code|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                    
+                                    {{ form.country|as_crispy_field }}
                                 </fieldset>
                                 
                                 <fieldset class="mb-4">

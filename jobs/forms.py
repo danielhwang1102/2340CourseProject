@@ -36,7 +36,8 @@ class JobForm(forms.ModelForm):
         model = Job
         fields = [
             'title', 'description', 'requirements', 'company_name',
-            'location', 'location_type', 'job_type', 'experience_level',
+            'street_address', 'city', 'state_province', 'postal_code', 'country',
+            'location_type', 'job_type', 'experience_level',
             'salary_min', 'salary_max', 'salary_currency', 'benefits',
             'required_skills', 'visa_sponsorship', 'application_deadline'
         ]
@@ -65,8 +66,24 @@ class JobForm(forms.ModelForm):
                 'placeholder': 'e.g. Tech Corp Inc.',
                 'class': 'form-control'
             }),
-            'location': forms.TextInput(attrs={
-                'placeholder': 'e.g. Atlanta, GA or Remote',
+            'street_address': forms.TextInput(attrs={
+                'placeholder': '123 Main Street',
+                'class': 'form-control'
+            }),
+            'city': forms.TextInput(attrs={
+                'placeholder': 'Atlanta',
+                'class': 'form-control'
+            }),
+            'state_province': forms.TextInput(attrs={
+                'placeholder': 'Georgia',
+                'class': 'form-control'
+            }),
+            'postal_code': forms.TextInput(attrs={
+                'placeholder': '30301',
+                'class': 'form-control'
+            }),
+            'country': forms.TextInput(attrs={
+                'placeholder': 'United States',
                 'class': 'form-control'
             }),
             'salary_min': forms.NumberInput(attrs={
@@ -86,9 +103,9 @@ class JobForm(forms.ModelForm):
         }
 
         help_texts = {
+            'street_address': 'Leave blank for remote positions',
             'salary_min': 'Minimum annual salary',
             'salary_max': 'Maximum annual salary',
-            'location': 'City, State or "Remote"',
             'job_type': 'Employment type',
             'experience_level': 'Required experience level',
             'visa_sponsorship': 'Check if you provide visa sponsorship',
@@ -97,7 +114,7 @@ class JobForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Required fields
-        for f in ['title', 'description', 'location', 'company_name', 'job_type', 'location_type', 'experience_level']:
+        for f in ['title', 'description', 'company_name', 'city', 'country', 'job_type', 'location_type', 'experience_level']:
             if f in self.fields:
                 self.fields[f].required = True
 
@@ -109,6 +126,13 @@ class JobForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
+        location_type = cleaned.get('location_type')
+        city = cleaned.get('city')
+        
+        # Require city for on-site and hybrid positions
+        if location_type in ['onsite', 'hybrid'] and not city:
+            raise forms.ValidationError('City is required for on-site and hybrid positions.')
+        
         smin = cleaned.get('salary_min')
         smax = cleaned.get('salary_max')
         if smin and smax and smin >= smax:
@@ -124,7 +148,7 @@ class JobFilterForm(forms.Form):
     )
     location = forms.CharField(
         required=False,
-        widget=forms.TextInput(attrs={'placeholder': 'City, State or Remote', 'class': 'form-control'})
+        widget=forms.TextInput(attrs={'placeholder': 'City or State', 'class': 'form-control'})
     )
     job_type = forms.ChoiceField(
         required=False,
@@ -166,7 +190,6 @@ class JobFilterForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Bind choices from model constants
         self.fields['job_type'].choices = [('', 'Any')] + list(getattr(Job, 'JOB_TYPE', []))
         self.fields['location_type'].choices = [('', 'Any')] + list(getattr(Job, 'LOCATION_TYPE', []))
         self.fields['experience_level'].choices = [('', 'Any')] + list(getattr(Job, 'EXPERIENCE_LEVEL', []))

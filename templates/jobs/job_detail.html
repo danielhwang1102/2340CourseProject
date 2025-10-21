@@ -37,16 +37,12 @@
                 {% endif %}
 
                 {% if job.required_skills.all %}
-                    {% with skills=job.required_skills.all %}
-                        {% if skills|length > 0 %}
-                            <h3>Required Skills</h3>
-                            <p>
-                                {% for skill in skills %}
-                                    <span class="badge bg-secondary me-1">{{ skill.name }}</span>
-                                {% endfor %}
-                            </p>
-                        {% endif %}
-                    {% endwith %}
+                    <h3>Required Skills</h3>
+                    <p>
+                        {% for skill in job.required_skills.all %}
+                            <span class="badge bg-secondary me-1">{{ skill.name }}</span>
+                        {% endfor %}
+                    </p>
                 {% endif %}
 
                 {% if job.visa_sponsorship %}
@@ -64,7 +60,7 @@
                 <h5>Job Details</h5>
             </div>
             <div class="card-body">
-                <p><strong>Location:</strong> {{ job.location }}</p>
+                <p><strong>Location:</strong> {{ job.get_full_address }}</p>
                 <p><strong>Location type:</strong> {{ job.get_location_type_display }}</p>
                 <p><strong>Type:</strong> {{ job.get_job_type_display }}</p>
                 <p><strong>Experience:</strong> {{ job.get_experience_level_display }}</p>

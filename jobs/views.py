@@ -201,7 +201,7 @@ class JobMapView(TemplateView):
             is_active=True,
             latitude__isnull=False,
             longitude__isnull=False
-        ).select_related('posted_by')[:200]  # Limit for performance
+        ).select_related('posted_by')[:200]
 
         # Prepare data for JavaScript
         job_data = []
@@ -210,7 +210,7 @@ class JobMapView(TemplateView):
                 'id': job.id,
                 'title': job.title,
                 'company': job.get_company_name(),
-                'location': job.location,
+                'short_location': job.get_short_location(),  # CHANGED: Use get_short_location()
                 'latitude': float(job.latitude),
                 'longitude': float(job.longitude),
                 'job_type': job.get_job_type_display(),
@@ -222,14 +222,14 @@ class JobMapView(TemplateView):
         context['jobs_json'] = json.dumps(job_data)
         context['total_jobs'] = len(job_data)
         
-        # Calculate center point (average of all job locations)
+        # Calculate center point
         if job_data:
             avg_lat = sum(j['latitude'] for j in job_data) / len(job_data)
             avg_lng = sum(j['longitude'] for j in job_data) / len(job_data)
             context['center_lat'] = avg_lat
             context['center_lng'] = avg_lng
         else:
-            context['center_lat'] = 37.7749  # Default to San Francisco
+            context['center_lat'] = 37.7749
             context['center_lng'] = -122.4194
         
         return context

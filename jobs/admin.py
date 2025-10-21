@@ -8,7 +8,7 @@ class JobAdmin(admin.ModelAdmin):
     list_display = [
         'title', 
         'get_company_name', 
-        'location', 
+        'get_short_location',  # CHANGED: from 'location' to 'get_short_location'
         'job_type', 
         'posted_by', 
         'is_active_status',
@@ -30,12 +30,14 @@ class JobAdmin(admin.ModelAdmin):
         'title', 
         'company__name', 
         'company_name', 
-        'location',
+        'city',  # CHANGED: from 'location' to 'city'
+        'state_province',  # ADDED
+        'country',  # ADDED
         'posted_by__username',
         'posted_by__email'
     ]
     
-    readonly_fields = ['created_at', 'updated_at', 'application_count']
+    readonly_fields = ['created_at', 'updated_at', 'application_count', 'latitude', 'longitude']  # ADDED lat/lng
     
     filter_horizontal = ['required_skills']
     
@@ -44,7 +46,18 @@ class JobAdmin(admin.ModelAdmin):
             'fields': ('title', 'description', 'requirements')
         }),
         ('Company & Location', {
-            'fields': ('company', 'company_name', 'location', 'location_type')
+            'fields': (
+                'company', 
+                'company_name', 
+                'location_type',
+                'street_address',  # ADDED
+                'city',  # ADDED
+                'state_province',  # ADDED
+                'postal_code',  # ADDED
+                'country',  # ADDED
+                'latitude',  # ADDED
+                'longitude'  # ADDED
+            )
         }),
         ('Job Details', {
             'fields': ('job_type', 'experience_level', 'required_skills', 'benefits')
@@ -74,6 +87,11 @@ class JobAdmin(admin.ModelAdmin):
         return obj.company_name or "No Company"
     get_company_name.short_description = "Company"
     get_company_name.admin_order_field = 'company__name'
+    
+    def get_short_location(self, obj):
+        """Display short location format"""
+        return obj.get_short_location()
+    get_short_location.short_description = "Location"
     
     def is_active_status(self, obj):
         """Show active status with colors"""

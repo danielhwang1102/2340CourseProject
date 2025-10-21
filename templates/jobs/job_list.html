@@ -84,7 +84,7 @@
                   <h6 class="card-subtitle text-muted mb-2">{{ job.company_name }}</h6>
                   <p class="card-text mb-2">
                     <i class="fas fa-map-marker-alt"></i>
-                    {{ job.location }} · {{ job.get_job_type_display }} · {{ job.get_experience_level_display }}
+                    {{ job.get_short_address }} · {{ job.get_job_type_display }} · {{ job.get_experience_level_display }}
                   </p>
                   {% if job.required_skills.all %}
                     <div class="mb-2">

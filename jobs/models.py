@@ -36,11 +36,17 @@ class Job(models.Model):
     description = models.TextField()
     requirements = models.TextField(help_text="Job requirements and qualifications")
     
-    # Company can be either a Company object or just a string for flexibility
+    # Company
     company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
     company_name = models.CharField(max_length=200, help_text="Use if company not in database")
     
-    location = models.CharField(max_length=100)
+    # Detailed Location Fields (UPDATED WITH DEFAULTS)
+    street_address = models.CharField(max_length=200, blank=True, help_text="Street address (optional for remote)")
+    city = models.CharField(max_length=100, blank=True, default='Atlanta', help_text="City")
+    state_province = models.CharField(max_length=100, blank=True, help_text="State/Province")
+    postal_code = models.CharField(max_length=20, blank=True, help_text="Postal/Zip code")
+    country = models.CharField(max_length=100, default='United States', help_text="Country")
+    
     location_type = models.CharField(max_length=20, choices=LOCATION_TYPE)
     job_type = models.CharField(max_length=20, choices=JOB_TYPE)
     experience_level = models.CharField(max_length=20, choices=EXPERIENCE_LEVEL, default='mid')
@@ -64,13 +70,38 @@ class Job(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     # Map attributes
-    location = models.CharField(max_length=100)
     latitude = models.FloatField(blank=True, null=True)
     longitude = models.FloatField(blank=True, null=True)
 
     def get_company_name(self):
         """Return company name whether from Company object or string field"""
         return self.company.name if self.company else self.company_name
+    
+    def get_full_address(self):
+        """Return the complete formatted address"""
+        address_parts = []
+        if self.street_address:
+            address_parts.append(self.street_address)
+        if self.city:
+            address_parts.append(self.city)
+        if self.state_province:
+            address_parts.append(self.state_province)
+        if self.postal_code:
+            address_parts.append(self.postal_code)
+        if self.country:
+            address_parts.append(self.country)
+        return ", ".join(address_parts) if address_parts else "Remote"
+    
+    def get_short_location(self):
+        """Return city, state for display"""
+        if self.location_type == 'remote':
+            return "Remote"
+        parts = []
+        if self.city:
+            parts.append(self.city)
+        if self.state_province:
+            parts.append(self.state_province)
+        return ", ".join(parts) if parts else "Location TBD"
 
     def get_absolute_url(self):
         return reverse('jobs:job_detail', kwargs={'pk': self.pk})
@@ -120,19 +151,19 @@ class Job(models.Model):
         }
         return currency_symbols.get(self.salary_currency, self.salary_currency)
     
-    # map related methods
     def save(self, *args, **kwargs):
-        # Auto-geocode if location changed and coordinates are missing
-        if self.location and (not self.latitude or not self.longitude):
+        # Auto-geocode using full address
+        full_address = self.get_full_address()
+        
+        if full_address and full_address != "Remote" and (not self.latitude or not self.longitude):
             try:
                 from geopy.geocoders import Nominatim
                 geolocator = Nominatim(user_agent="jobplatform")
-                location_data = geolocator.geocode(self.location, timeout=10)
+                location_data = geolocator.geocode(full_address, timeout=10)
                 if location_data:
                     self.latitude = location_data.latitude
                     self.longitude = location_data.longitude
             except Exception as e:
-                # Log error but don't fail the save
                 print(f"Geocoding error: {e}")
         super().save(*args, **kwargs)
 
