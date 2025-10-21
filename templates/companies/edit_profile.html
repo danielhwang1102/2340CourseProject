@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Complete Your Company Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0">
+                        <i class="fas fa-building"></i> Complete Your Recruiter Profile
+                    </h2>
+                    <p class="mb-0 mt-2">Attract top talent by completing your company profile</p>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Company Basic Info -->
+                        <div class="mb-4">
+                            <h4 class="border-bottom pb-2">
+                                <i class="fas fa-info-circle text-primary"></i> Company Information
+                            </h4>
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    {{ form.name.label_tag }}
+                                    {{ form.name }}
+                                    {% if form.name.help_text %}
+                                        <small class="form-text text-muted">{{ form.name.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.name.errors %}
+                                        <div class="text-danger">{{ form.name.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    {{ form.description.label_tag }}
+                                    {{ form.description }}
+                                    {% if form.description.help_text %}
+                                        <small class="form-text text-muted">{{ form.description.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.description.errors %}
+                                        <div class="text-danger">{{ form.description.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Company Details -->
+                        <div class="mb-4">
+                            <h4 class="border-bottom pb-2">
+                                <i class="fas fa-building text-primary"></i> Company Details
+                            </h4>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.location.label_tag }}
+                                    {{ form.location }}
+                                    {% if form.location.help_text %}
+                                        <small class="form-text text-muted">{{ form.location.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.location.errors %}
+                                        <div class="text-danger">{{ form.location.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.employees_count.label_tag }}
+                                    {{ form.employees_count }}
+                                    {% if form.employees_count.help_text %}
+                                        <small class="form-text text-muted">{{ form.employees_count.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.employees_count.errors %}
+                                        <div class="text-danger">{{ form.employees_count.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.founded_year.label_tag }}
+                                    {{ form.founded_year }}
+                                    {% if form.founded_year.help_text %}
+                                        <small class="form-text text-muted">{{ form.founded_year.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.founded_year.errors %}
+                                        <div class="text-danger">{{ form.founded_year.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.website.label_tag }}
+                                    {{ form.website }}
+                                    {% if form.website.help_text %}
+                                        <small class="form-text text-muted">{{ form.website.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.website.errors %}
+                                        <div class="text-danger">{{ form.website.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Company Logo -->
+                        <div class="mb-4">
+                            <h4 class="border-bottom pb-2">
+                                <i class="fas fa-image text-primary"></i> Company Branding
+                            </h4>
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    {{ form.logo.label_tag }}
+                                    {{ form.logo }}
+                                    {% if form.logo.help_text %}
+                                        <small class="form-text text-muted">{{ form.logo.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.logo.errors %}
+                                        <div class="text-danger">{{ form.logo.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'home' %}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times"></i> Skip for Now
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-check"></i> Complete Profile
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
