@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}{{ profile.user.get_full_name|default:profile.user.username }} - Candidate Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <a href="{% url 'profiles:search_candidates' %}" class="btn btn-secondary mb-3">
+                <i class="fas fa-arrow-left"></i> Back to Search
+            </a>
+
+            <div class="card shadow">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-4">
+                        {% if profile.profile_picture %}
+                            <img src="{{ profile.profile_picture.url }}" 
+                                 class="rounded-circle me-4" 
+                                 style="width: 100px; height: 100px; object-fit: cover;" 
+                                 alt="{{ profile.user.username }}">
+                        {% else %}
+                            <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-4" 
+                                 style="width: 100px; height: 100px;">
+                                <i class="fas fa-user fa-3x"></i>
+                            </div>
+                        {% endif %}
+                        <div>
+                            <h2 class="mb-1">{{ profile.user.get_full_name|default:profile.user.username }}</h2>
+                            <p class="text-muted mb-2">{{ profile.headline }}</p>
+                            {% if profile.open_to_work %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle"></i> Open to Work
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Bio -->
+                    {% if profile.bio %}
+                        <div class="mb-4">
+                            <h4><i class="fas fa-user-circle text-primary"></i> About</h4>
+                            <p>{{ profile.bio|linebreaks }}</p>
+                        </div>
+                    {% endif %}
+
+                    <!-- Current Position & Experience -->
+                    <div class="mb-4">
+                        <h4><i class="fas fa-briefcase text-primary"></i> Professional Information</h4>
+                        {% if profile.current_position %}
+                            <p><strong>Current Position:</strong> {{ profile.current_position }}</p>
+                        {% endif %}
+                        {% if profile.years_experience %}
+                            <p><strong>Years of Experience:</strong> {{ profile.years_experience }} years</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Location -->
+                    {% if profile.location %}
+                        <div class="mb-4">
+                            <h4><i class="fas fa-map-marker-alt text-primary"></i> Location</h4>
+                            <p>{{ profile.location }}</p>
+                        </div>
+                    {% endif %}
+
+                    <!-- Skills -->
+                    {% if profile.skills.all %}
+                        <div class="mb-4">
+                            <h4><i class="fas fa-tools text-primary"></i> Skills</h4>
+                            <div>
+                                {% for skill in profile.skills.all %}
+                                    <span class="badge bg-secondary me-2 mb-2">{{ skill.name }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- Education -->
+                    {% if profile.education %}
+                        <div class="mb-4">
+                            <h4><i class="fas fa-graduation-cap text-primary"></i> Education</h4>
+                            <p>{{ profile.education|linebreaks }}</p>
+                        </div>
+                    {% endif %}
+
+                    <!-- Certifications -->
+                    {% if profile.certifications %}
+                        <div class="mb-4">
+                            <h4><i class="fas fa-certificate text-primary"></i> Certifications</h4>
+                            <p>{{ profile.certifications|linebreaks }}</p>
+                        </div>
+                    {% endif %}
+
+                    <!-- Links -->
+                    <div class="mb-4">
+                        <h4><i class="fas fa-link text-primary"></i> Links</h4>
+                        <div class="d-flex gap-3">
+                            {% if profile.website %}
+                                <a href="{{ profile.website }}" target="_blank" class="btn btn-outline-primary">
+                                    <i class="fas fa-globe"></i> Website
+                                </a>
+                            {% endif %}
+                            {% if profile.linkedin %}
+                                <a href="{{ profile.linkedin }}" target="_blank" class="btn btn-outline-primary">
+                                    <i class="fab fa-linkedin"></i> LinkedIn
+                                </a>
+                            {% endif %}
+                            {% if profile.github %}
+                                <a href="{{ profile.github }}" target="_blank" class="btn btn-outline-dark">
+                                    <i class="fab fa-github"></i> GitHub
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Resume -->
+                    {% if profile.resume %}
+                        <div class="mb-4">
+                            <h4><i class="fas fa-file-pdf text-primary"></i> Resume</h4>
+                            <a href="{{ profile.resume.url }}" target="_blank" class="btn btn-success">
+                                <i class="fas fa-download"></i> Download Resume
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Contact Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Email:</strong> {{ profile.user.email }}</p>
+                    <p class="text-muted"><small>Contact this candidate through your company email system</small></p>
+                </div>
+            </div>
+
+            {% if profile.preferred_salary_min or profile.preferred_salary_max %}
+                <div class="card shadow">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Salary Expectations</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if profile.preferred_salary_min and profile.preferred_salary_max %}
+                            <p>${{ profile.preferred_salary_min|floatformat:0 }} - ${{ profile.preferred_salary_max|floatformat:0 }}</p>
+                        {% elif profile.preferred_salary_min %}
+                            <p>Min: ${{ profile.preferred_salary_min|floatformat:0 }}</p>
+                        {% elif profile.preferred_salary_max %}
+                            <p>Max: ${{ profile.preferred_salary_max|floatformat:0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

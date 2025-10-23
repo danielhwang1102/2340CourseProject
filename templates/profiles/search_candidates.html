@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Search Candidates{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h1><i class="fas fa-search"></i> Search Candidates</h1>
+            <p class="text-muted">Find qualified candidates that match your job requirements</p>
+            <hr>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Search Filters Sidebar -->
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-filter"></i> Filters</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" action="{% url 'profiles:search_candidates' %}">
+                        <!-- Keywords -->
+                        <div class="mb-3">
+                            {{ form.keywords.label_tag }}
+                            {{ form.keywords }}
+                        </div>
+
+                        <!-- Location -->
+                        <div class="mb-3">
+                            {{ form.location.label_tag }}
+                            {{ form.location }}
+                        </div>
+
+                        <!-- Minimum Experience -->
+                        <div class="mb-3">
+                            {{ form.min_experience.label_tag }}
+                            {{ form.min_experience }}
+                        </div>
+
+                        <!-- Open to Work -->
+                        <div class="mb-3 form-check">
+                            {{ form.open_to_work }}
+                            {{ form.open_to_work.label_tag }}
+                        </div>
+
+                        <!-- Education -->
+                        <div class="mb-3">
+                            {{ form.education_keyword.label_tag }}
+                            {{ form.education_keyword }}
+                        </div>
+
+                        <!-- Certifications -->
+                        <div class="mb-3">
+                            {{ form.certification_keyword.label_tag }}
+                            {{ form.certification_keyword }}
+                        </div>
+
+                        <!-- Skills (scrollable) -->
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Skills</strong></label>
+                            <div style="max-height: 200px; overflow-y: auto; border: 1px solid #dee2e6; padding: 10px; border-radius: 4px;">
+                                {{ form.skills }}
+                            </div>
+                            <small class="text-muted">Select multiple skills</small>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                        <a href="{% url 'profiles:search_candidates' %}" class="btn btn-secondary w-100 mt-2">
+                            <i class="fas fa-redo"></i> Reset
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Results -->
+        <div class="col-md-9">
+            {% if total_results > 0 %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Found <strong>{{ total_results }}</strong> candidate{{ total_results|pluralize }}
+                </div>
+
+                <div class="row">
+                    {% for profile in profiles %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        {% if profile.profile_picture %}
+                                            <img src="{{ profile.profile_picture.url }}" 
+                                                 class="rounded-circle me-3" 
+                                                 style="width: 60px; height: 60px; object-fit: cover;" 
+                                                 alt="{{ profile.user.username }}">
+                                        {% else %}
+                                            <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-3" 
+                                                 style="width: 60px; height: 60px;">
+                                                <i class="fas fa-user fa-2x"></i>
+                                            </div>
+                                        {% endif %}
+                                        <div>
+                                            <h5 class="mb-0">{{ profile.user.get_full_name|default:profile.user.username }}</h5>
+                                            <p class="text-muted mb-0">
+                                                <small>{{ profile.headline|truncatewords:10 }}</small>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <i class="fas fa-briefcase text-primary"></i>
+                                        <strong>{{ profile.current_position|default:"Position not specified" }}</strong>
+                                    </div>
+
+                                    {% if profile.location %}
+                                        <div class="mb-2">
+                                            <i class="fas fa-map-marker-alt text-danger"></i>
+                                            {{ profile.location }}
+                                        </div>
+                                    {% endif %}
+
+                                    {% if profile.years_experience %}
+                                        <div class="mb-2">
+                                            <i class="fas fa-clock text-success"></i>
+                                            {{ profile.years_experience }} years experience
+                                        </div>
+                                    {% endif %}
+
+                                    {% if profile.open_to_work %}
+                                        <span class="badge bg-success mb-2">
+                                            <i class="fas fa-check-circle"></i> Open to Work
+                                        </span>
+                                    {% endif %}
+
+                                    <!-- Skills -->
+                                    {% if profile.skills.all %}
+                                        <div class="mb-3">
+                                            <small class="text-muted">Skills:</small><br>
+                                            {% for skill in profile.skills.all|slice:":5" %}
+                                                <span class="badge bg-secondary me-1">{{ skill.name }}</span>
+                                            {% endfor %}
+                                            {% if profile.skills.count > 5 %}
+                                                <span class="badge bg-light text-dark">+{{ profile.skills.count|add:"-5" }} more</span>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+
+                                    <a href="{% url 'profiles:candidate_detail' profile.id %}" class="btn btn-primary btn-sm w-100">
+                                        <i class="fas fa-eye"></i> View Full Profile
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% elif request.GET %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> No candidates found matching your criteria. Try adjusting your filters.
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Use the filters on the left to search for candidates.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

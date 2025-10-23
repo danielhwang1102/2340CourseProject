@@ -1,17 +1,16 @@
-from django.shortcuts import render
-
-import companies
-from .forms import ProfileForm
-from companies.forms import CompanyProfileForm
-from companies.models import Company
-
-
-# Create your views here.
+from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.db.models import Count, Q
+from django.contrib import messages
 
+import companies
+from .forms import ProfileForm, CandidateSearchForm
+from .models import Profile, Skill
+from companies.forms import CompanyProfileForm
+from companies.models import Company
 from jobs.models import Job
+
 
 @login_required
 def edit_profile(request):
@@ -34,6 +33,8 @@ def edit_profile(request):
         form = form_class(instance=profile_instance)
 
     return render(request, 'profiles/edit_profile.html', {'form': form})
+
+
 @login_required
 def view_profile(request):
     user = request.user
@@ -82,3 +83,107 @@ def recommend_jobs(request):
     )
 
     return render(request, 'profiles/recommendations.html', {'jobs': jobs_qs, 'profile': profile})
+
+
+@login_required
+def search_candidates(request):
+    """
+    Allow recruiters to search for candidates by skills, location, and other criteria.
+    User Story #11: As a Recruiter, I want to search for candidates by skills, 
+    location, and projects so I can find talent that fits my positions.
+    """
+    # Only recruiters can search for candidates
+    if request.user.user_type != 'recruiter':
+        messages.error(request, 'Only recruiters can search for candidates.')
+        return redirect('profiles:view_profile')
+    
+    form = CandidateSearchForm(request.GET or None)
+    profiles = Profile.objects.none()  # Start with empty queryset
+    
+    if request.GET:
+        # Start with all public profiles of users who are open to work
+        profiles = Profile.objects.filter(
+            visibility='public',
+            user__user_type='job_seeker'
+        ).select_related('user').prefetch_related('skills')
+        
+        if form.is_valid():
+            # Filter by keywords (search in headline, bio, current_position)
+            keywords = form.cleaned_data.get('keywords')
+            if keywords:
+                profiles = profiles.filter(
+                    Q(headline__icontains=keywords) |
+                    Q(bio__icontains=keywords) |
+                    Q(current_position__icontains=keywords)
+                )
+            
+            # Filter by skills
+            skills = form.cleaned_data.get('skills')
+            if skills:
+                skill_ids = [skill.id for skill in skills]
+                # Annotate with matching skill count and filter
+                profiles = profiles.annotate(
+                    skill_match_count=Count('skills', filter=Q(skills__in=skill_ids))
+                ).filter(skill_match_count__gt=0).order_by('-skill_match_count')
+            
+            # Filter by location
+            location = form.cleaned_data.get('location')
+            if location:
+                profiles = profiles.filter(location__icontains=location)
+            
+            # Filter by minimum experience
+            min_experience = form.cleaned_data.get('min_experience')
+            if min_experience is not None:
+                profiles = profiles.filter(years_experience__gte=min_experience)
+            
+            # Filter by open to work status
+            open_to_work = form.cleaned_data.get('open_to_work')
+            if open_to_work:
+                profiles = profiles.filter(open_to_work=True)
+            
+            # Filter by education keywords
+            education_keyword = form.cleaned_data.get('education_keyword')
+            if education_keyword:
+                profiles = profiles.filter(education__icontains=education_keyword)
+            
+            # Filter by certification keywords
+            certification_keyword = form.cleaned_data.get('certification_keyword')
+            if certification_keyword:
+                profiles = profiles.filter(certifications__icontains=certification_keyword)
+        
+        # Order by most recently updated
+        profiles = profiles.order_by('-updated_at')
+    
+    context = {
+        'form': form,
+        'profiles': profiles,
+        'total_results': profiles.count() if profiles else 0,
+    }
+    
+    return render(request, 'profiles/search_candidates.html', context)
+
+
+@login_required
+def candidate_detail(request, profile_id):
+    """
+    View detailed profile of a candidate.
+    Only accessible to recruiters.
+    """
+    # Only recruiters can view candidate details
+    if request.user.user_type != 'recruiter':
+        messages.error(request, 'Only recruiters can view candidate profiles.')
+        return redirect('profiles:view_profile')
+    
+    # Get the profile (must be public and belong to a job seeker)
+    profile = get_object_or_404(
+        Profile.objects.select_related('user').prefetch_related('skills'),
+        id=profile_id,
+        visibility='public',
+        user__user_type='job_seeker'
+    )
+    
+    context = {
+        'profile': profile,
+    }
+    
+    return render(request, 'profiles/candidate_detail.html', context)
