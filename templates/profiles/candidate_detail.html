@@ -135,7 +135,15 @@
                 </div>
                 <div class="card-body">
                     <p><strong>Email:</strong> {{ profile.user.email }}</p>
-                    <p class="text-muted"><small>Contact this candidate through your company email system</small></p>
+                    
+                    {% if user.is_authenticated and user.user_type == 'recruiter' and user != profile.user %}
+                        <a href="{% url 'messaging:compose_to_user' profile.user.username %}" class="btn btn-primary w-100 mb-2">
+                            <i class="fas fa-envelope"></i> Send Message
+                        </a>
+                        <p class="text-muted mb-0"><small>Contact this candidate directly through our messaging system</small></p>
+                    {% else %}
+                        <p class="text-muted"><small>Login as a recruiter to contact this candidate</small></p>
+                    {% endif %}
                 </div>
             </div>
 

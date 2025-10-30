@@ -69,11 +69,11 @@
                             </div>
                         </div>
                         <div>
-                            <!-- FIXED: Conditional profile link based on user type -->
+                            <!-- FIXED: Better profile check -->
                             {% if other_participant.user_type == 'job_seeker' %}
-                                {% if other_participant.candidateprofile %}
-                                    <a href="{% url 'profiles:candidate_detail' other_participant.candidateprofile.id %}" 
-                                       class="btn btn-outline-primary btn-sm me-2">
+                                {% if other_participant.profile %}
+                                    <a href="{% url 'profiles:candidate_detail' other_participant.profile.id %}" 
+                                    class="btn btn-outline-primary btn-sm me-2">
                                         <i class="fas fa-user"></i> View Profile
                                     </a>
                                 {% else %}

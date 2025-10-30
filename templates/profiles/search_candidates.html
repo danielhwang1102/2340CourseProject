@@ -147,9 +147,14 @@
                                         </div>
                                     {% endif %}
 
-                                    <a href="{% url 'profiles:candidate_detail' profile.id %}" class="btn btn-primary btn-sm w-100">
-                                        <i class="fas fa-eye"></i> View Full Profile
-                                    </a>
+                                    <div class="d-grid gap-2">
+                                        <a href="{% url 'profiles:candidate_detail' profile.id %}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-eye"></i> View Full Profile
+                                        </a>
+                                        <a href="{% url 'messaging:compose_to_user' profile.user.username %}" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-envelope"></i> Send Message
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>

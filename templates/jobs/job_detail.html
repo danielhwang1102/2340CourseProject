@@ -27,15 +27,34 @@
                 
                 <!-- Apply Button -->
                 {% if user.is_authenticated and user.user_type == 'job_seeker' %}
-                    {% if not user_has_applied %}
-                        <a href="{% url 'applications:apply' job_pk=job.pk %}" class="btn btn-primary btn-lg mb-3">
-                            <i class="fas fa-paper-plane"></i> Apply Now
-                        </a>
-                    {% else %}
-                        <div class="alert alert-success">
-                            <i class="fas fa-check-circle"></i> You have already applied to this job.
-                        </div>
-                    {% endif %}
+                    <div class="d-flex gap-2 mb-3">
+                        {% if not user_has_applied %}
+                            <a href="{% url 'applications:apply' job_pk=job.pk %}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-paper-plane"></i> Apply Now
+                            </a>
+                        {% else %}
+                            <div class="alert alert-success mb-0">
+                                <i class="fas fa-check-circle"></i> You have already applied to this job.
+                            </div>
+                        {% endif %}
+                        
+                        <!-- NEW: Contact Recruiter button -->
+                        {% if job.posted_by and job.posted_by != user %}
+                            <a href="{% url 'messaging:compose_to_user' job.posted_by.username %}" class="btn btn-outline-primary btn-lg">
+                                <i class="fas fa-envelope"></i> Contact Recruiter
+                            </a>
+                        {% endif %}
+                    </div>
+                    {% elif user.is_authenticated %}
+                    <!-- Recruiter viewing their own job -->
+                    <div class="alert alert-info mb-3">
+                        <i class="fas fa-info-circle"></i> This is your job posting.
+                    </div>
+                {% else %}
+                    <!-- Not logged in -->
+                    <a href="{% url 'account_login' %}?next={{ request.path }}" class="btn btn-primary btn-lg mb-3">
+                        <i class="fas fa-sign-in-alt"></i> Login to Apply
+                    </a>
                 {% endif %}
                 
                 <h3>Job Description</h3>

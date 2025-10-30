@@ -53,7 +53,7 @@
                             
                             <div class="mt-3">
                                 {% if request.user == job.posted_by and request.user.user_type == 'recruiter' %}
-                                    <form method="post" action="{% url 'applications:update_status' application.pk %}">
+                                    <form method="post" action="{% url 'applications:update_status' application.pk %}" class="mb-2">
                                         {% csrf_token %}
                                         <div class="input-group input-group-sm">
                                             <select name="status" class="form-select">
@@ -65,6 +65,11 @@
                                             <button class="btn btn-success" type="submit">Update</button>
                                         </div>
                                     </form>
+                                    
+                                    <!-- NEW: Message Candidate button -->
+                                    <a href="{% url 'messaging:compose_to_user' application.applicant.username %}" class="btn btn-outline-primary btn-sm w-100">
+                                        <i class="fas fa-envelope"></i> Message Candidate
+                                    </a>
                                 {% else %}
                                     <a href="{% url 'admin:applications_application_change' application.pk %}" class="btn btn-primary btn-sm">
                                         <i class="fas fa-edit"></i> Manage Application
