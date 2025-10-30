@@ -110,6 +110,15 @@
         font-weight: bold;
         margin-left: 10px;
     }
+    /* NEW: Highlight pulse animation */
+    @keyframes pulse {
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.1); opacity: 0.7; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    .highlight-marker {
+        animation: pulse 2s infinite;
+    }
 </style>
 {% endblock %}
 
@@ -236,24 +245,25 @@
     const allJobs = {{ jobs_json|safe }};
     let currentMarkers = [];
     let userMarker = null;
-    let distanceCircles = [];  // Store multiple circles
+    let distanceCircles = [];
+    let highlightCircle = null; // NEW: Store highlight circle
 
     // Define distance zones with colors
     const distanceZones = [
-        { radius: 10, color: '#4caf50', label: '0-10 km', fillOpacity: 0.15 },      // Green
-        { radius: 25, color: '#2196F3', label: '10-25 km', fillOpacity: 0.12 },     // Blue
-        { radius: 50, color: '#FF9800', label: '25-50 km', fillOpacity: 0.1 },      // Orange
-        { radius: 100, color: '#FFC107', label: '50-100 km', fillOpacity: 0.08 },   // Yellow
-        { radius: 200, color: '#f44336', label: '100+ km', fillOpacity: 0.06 }      // Red
+        { radius: 10, color: '#4caf50', label: '0-10 km', fillOpacity: 0.15 },
+        { radius: 25, color: '#2196F3', label: '10-25 km', fillOpacity: 0.12 },
+        { radius: 50, color: '#FF9800', label: '25-50 km', fillOpacity: 0.1 },
+        { radius: 100, color: '#FFC107', label: '50-100 km', fillOpacity: 0.08 },
+        { radius: 200, color: '#f44336', label: '100+ km', fillOpacity: 0.06 }
     ];
 
     // Function to get color based on distance
     function getColorByDistance(distance) {
-        if (distance <= 10) return '#4caf50';      // Green
-        if (distance <= 25) return '#2196F3';      // Blue
-        if (distance <= 50) return '#FF9800';      // Orange
-        if (distance <= 100) return '#FFC107';     // Yellow
-        return '#f44336';                          // Red
+        if (distance <= 10) return '#4caf50';
+        if (distance <= 25) return '#2196F3';
+        if (distance <= 50) return '#FF9800';
+        if (distance <= 100) return '#FFC107';
+        return '#f44336';
     }
 
     // Function to display jobs on map
@@ -327,6 +337,66 @@
     // Initial display of all jobs
     displayJobs(allJobs);
 
+    // ============================================
+    // NEW: User Story #17 - Highlight specific job from URL parameter
+    // ============================================
+    const urlParams = new URLSearchParams(window.location.search);
+    const highlightJobId = urlParams.get('highlight');
+
+    if (highlightJobId) {
+        // Find the highlighted job
+        const highlightedJob = allJobs.find(job => job.id == highlightJobId);
+        
+        if (highlightedJob) {
+            // Center map on this job with closer zoom
+            map.setView([highlightedJob.latitude, highlightedJob.longitude], 14);
+            
+            // Add a pulsing red circle around the highlighted job
+            highlightCircle = L.circle([highlightedJob.latitude, highlightedJob.longitude], {
+                color: '#FF0000',
+                fillColor: '#FF0000',
+                fillOpacity: 0.2,
+                radius: 1000,
+                weight: 3,
+                dashArray: '10, 10'
+            }).addTo(map);
+            
+            // Find and open the marker popup after a short delay
+            setTimeout(() => {
+                currentMarkers.forEach(marker => {
+                    const markerLatLng = marker.getLatLng();
+                    if (markerLatLng.lat === highlightedJob.latitude && 
+                        markerLatLng.lng === highlightedJob.longitude) {
+                        marker.openPopup();
+                        
+                        // Add CSS class to make marker pulse
+                        const markerElement = marker.getElement();
+                        if (markerElement) {
+                            markerElement.classList.add('highlight-marker');
+                        }
+                    }
+                });
+            }, 500);
+            
+            // Pulse animation for the circle
+            let growing = true;
+            setInterval(() => {
+                if (!highlightCircle) return;
+                const currentRadius = highlightCircle.getRadius();
+                if (growing) {
+                    highlightCircle.setRadius(currentRadius + 50);
+                    if (currentRadius >= 1500) growing = false;
+                } else {
+                    highlightCircle.setRadius(currentRadius - 50);
+                    if (currentRadius <= 500) growing = true;
+                }
+            }, 100);
+        }
+    }
+    // ============================================
+    // End User Story #17
+    // ============================================
+
     // Search button click handler
     document.getElementById('search-btn').addEventListener('click', function() {
         const locationInput = document.getElementById('user-location').value.trim();
@@ -348,19 +418,16 @@
             .then(response => response.json())
             .then(data => {
                 if (data.length === 0) {
-                    // No results found
                     errorMessage.innerHTML = '<i class="fas fa-exclamation-circle"></i> <strong>Invalid address:</strong> Could not find the location you entered. Please try again.';
                     errorMessage.style.display = 'block';
                     return;
                 }
 
-                // Get the first result
                 const location = data[0];
                 const userLat = parseFloat(location.lat);
                 const userLng = parseFloat(location.lon);
                 const maxRadius = parseFloat(document.getElementById('radius').value);
 
-                // Show success message
                 successMessage.innerHTML = `<i class="fas fa-check-circle"></i> Found location: ${location.display_name}`;
                 successMessage.style.display = 'block';
 
@@ -370,6 +437,12 @@
                 }
                 distanceCircles.forEach(circle => map.removeLayer(circle));
                 distanceCircles = [];
+
+                // Remove highlight circle when searching
+                if (highlightCircle) {
+                    map.removeLayer(highlightCircle);
+                    highlightCircle = null;
+                }
 
                 // Add user location marker
                 userMarker = L.marker([userLat, userLng], {
@@ -385,7 +458,7 @@
 
                 userMarker.bindPopup('<strong>Your Location</strong>').openPopup();
 
-                // Draw multi-level distance circles (from largest to smallest)
+                // Draw multi-level distance circles
                 distanceZones
                     .filter(zone => zone.radius <= maxRadius)
                     .reverse()
@@ -394,16 +467,14 @@
                             color: zone.color,
                             fillColor: zone.color,
                             fillOpacity: zone.fillOpacity,
-                            radius: zone.radius * 1000,  // Convert km to meters
+                            radius: zone.radius * 1000,
                             weight: 2
                         }).addTo(map);
                         distanceCircles.push(circle);
                     });
 
-                // Show distance legend
                 document.getElementById('distance-legend').style.display = 'block';
 
-                // Fit map to show all circles
                 if (distanceCircles.length > 0) {
                     map.fitBounds(distanceCircles[0].getBounds());
                 }
@@ -417,7 +488,6 @@
                     .filter(job => parseFloat(job.distance) <= maxRadius)
                     .sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
 
-                // Display filtered jobs
                 displayJobs(filteredJobs, { lat: userLat, lng: userLng });
 
                 if (filteredJobs.length === 0) {
@@ -455,13 +525,19 @@
         distanceCircles.forEach(circle => map.removeLayer(circle));
         distanceCircles = [];
         
+        // Remove highlight circle
+        if (highlightCircle) {
+            map.removeLayer(highlightCircle);
+            highlightCircle = null;
+        }
+        
         displayJobs(allJobs);
         map.setView([{{ center_lat }}, {{ center_lng }}], 10);
     });
 
     // Haversine formula to calculate distance between two points
     function calculateDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371; // Earth's radius in km
+        const R = 6371;
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
         const a = Math.sin(dLat/2) * Math.sin(dLat/2) +

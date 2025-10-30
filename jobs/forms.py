@@ -32,6 +32,21 @@ class JobForm(forms.ModelForm):
         help_text='Select the currency for salary range'
     )
 
+    # NEW: Hidden fields for coordinates (User Story #17)
+    latitude = forms.DecimalField(
+        required=False,
+        widget=forms.HiddenInput(attrs={'id': 'id_latitude'}),
+        max_digits=9,
+        decimal_places=6
+    )
+    
+    longitude = forms.DecimalField(
+        required=False,
+        widget=forms.HiddenInput(attrs={'id': 'id_longitude'}),
+        max_digits=9,
+        decimal_places=6
+    )
+
     class Meta:
         model = Job
         fields = [
@@ -39,7 +54,8 @@ class JobForm(forms.ModelForm):
             'street_address', 'city', 'state_province', 'postal_code', 'country',
             'location_type', 'job_type', 'experience_level',
             'salary_min', 'salary_max', 'salary_currency', 'benefits',
-            'required_skills', 'visa_sponsorship', 'application_deadline'
+            'required_skills', 'visa_sponsorship', 'application_deadline',
+            'latitude', 'longitude'  # NEW: Add coordinate fields
         ]
 
         widgets = {
