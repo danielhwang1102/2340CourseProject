@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Compose Message{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-6 offset-lg-3">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-edit"></i> Compose New Message</h3>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'messaging:inbox' %}" class="btn btn-outline-secondary btn-sm mb-3">
+                        <i class="fas fa-arrow-left"></i> Back to Inbox
+                    </a>
+
+                    {% if recipient %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            Sending message to: <strong>{{ recipient.get_full_name|default:recipient.username }}</strong>
+                        </div>
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Send Message
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Recent Contacts (Optional) -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5><i class="fas fa-users"></i> Quick Contacts</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">
+                        You can message job seekers from their profiles or recruiters from job postings.
+                    </p>
+                    <a href="{% url 'profiles:search_candidates' %}" class="btn btn-sm btn-outline-primary me-2">
+                        <i class="fas fa-search"></i> Find Candidates
+                    </a>
+                    <a href="{% url 'jobs:job_list' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-briefcase"></i> Browse Jobs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

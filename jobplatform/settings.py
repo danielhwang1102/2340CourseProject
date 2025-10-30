@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'applications',
     'companies',
     'notifications',
+    'messaging',
 ]
 
 MIDDLEWARE = [
