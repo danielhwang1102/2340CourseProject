@@ -152,7 +152,10 @@
                                             <i class="fas fa-eye"></i> View Full Profile
                                         </a>
                                         <a href="{% url 'messaging:compose_to_user' profile.user.username %}" class="btn btn-outline-primary btn-sm">
-                                            <i class="fas fa-envelope"></i> Send Message
+                                            <i class="fas fa-comment"></i> Message
+                                        </a>
+                                        <a href="{% url 'emails:email_candidate' profile.user.username %}" class="btn btn-outline-success btn-sm">
+                                            <i class="fas fa-envelope"></i> Email
                                         </a>
                                     </div>
                                 </div>

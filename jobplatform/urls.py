@@ -17,6 +17,7 @@ urlpatterns = [
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
     path('profiles/', include(('profiles.urls', 'profiles'), namespace='profiles')),
     path('messaging/', include('messaging.urls')),
+    path('emails/', include('emails.urls')),  # ← ADD THIS LINE (User Story #14)
 ]
 
 # Serve media files in development

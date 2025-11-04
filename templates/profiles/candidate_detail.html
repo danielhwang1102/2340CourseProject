@@ -137,10 +137,23 @@
                     <p><strong>Email:</strong> {{ profile.user.email }}</p>
                     
                     {% if user.is_authenticated and user.user_type == 'recruiter' and user != profile.user %}
-                        <a href="{% url 'messaging:compose_to_user' profile.user.username %}" class="btn btn-primary w-100 mb-2">
-                            <i class="fas fa-envelope"></i> Send Message
-                        </a>
-                        <p class="text-muted mb-0"><small>Contact this candidate directly through our messaging system</small></p>
+                        <div class="d-grid gap-2">
+                            <!-- Send Message Button -->
+                            <a href="{% url 'messaging:compose_to_user' profile.user.username %}" class="btn btn-primary">
+                                <i class="fas fa-comment"></i> Send Platform Message
+                            </a>
+                            
+                            <!-- Email Button (NEW) -->
+                            <a href="{% url 'emails:email_candidate' profile.user.username %}" class="btn btn-success">
+                                <i class="fas fa-envelope"></i> Send Email
+                            </a>
+                        </div>
+                        <p class="text-muted mt-2 mb-0">
+                            <small>
+                                <i class="fas fa-info-circle"></i> 
+                                Choose platform messaging for quick replies or email for formal communication
+                            </small>
+                        </p>
                     {% else %}
                         <p class="text-muted"><small>Login as a recruiter to contact this candidate</small></p>
                     {% endif %}

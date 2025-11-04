@@ -1,0 +1,29 @@
+{{ site_name }} - New Message from Recruiter
+================================================================
+
+Hello {{ recipient_name }},
+
+You have received a message from a recruiter on {{ site_name }}.
+
+FROM: {{ sender_name }}
+EMAIL: {{ sender_email }}
+
+SUBJECT: {{ subject }}
+
+MESSAGE:
+----------------------------------------------------------------
+{{ message }}
+----------------------------------------------------------------
+
+You can reply directly to this email at: {{ sender_email }}
+
+Or view this message on the platform:
+{{ site_url }}/messaging/
+
+================================================================
+© 2025 {{ site_name }}. All rights reserved.
+
+Visit our website: {{ site_url }}
+
+This email was sent from {{ site_name }}. 
+If you didn't expect this email, please ignore it.

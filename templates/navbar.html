@@ -56,14 +56,26 @@
                     {% endif %}
                     
                     <!-- NEW: Messages Link with Unread Badge (User Story #13) -->
-                    <li class="nav-item">
-                        <a class="nav-link position-relative" href="{% url 'messaging:inbox' %}">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle position-relative" href="#" id="messagesDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-envelope"></i> Messages
                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
-                                  id="unread-badge" style="display: none; font-size: 0.65rem;">
+                                id="unread-badge" style="display: none; font-size: 0.65rem;">
                                 0
                             </span>
                         </a>
+                        <ul class="dropdown-menu" aria-labelledby="messagesDropdown">
+                            <li><a class="dropdown-item" href="{% url 'messaging:inbox' %}">
+                                <i class="fas fa-inbox"></i> Inbox
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'messaging:compose' %}">
+                                <i class="fas fa-plus"></i> New Message
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'emails:email_history' %}">
+                                <i class="fas fa-history"></i> Email History
+                            </a></li>
+                        </ul>
                     </li>
                     
                     <li class="nav-item dropdown">

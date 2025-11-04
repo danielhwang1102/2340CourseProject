@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Email History{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">
+        <i class="fas fa-history"></i> Email History
+    </h1>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="sent-tab" data-bs-toggle="tab" data-bs-target="#sent" type="button" role="tab">
+                <i class="fas fa-paper-plane"></i> Sent Emails ({{ sent_emails.count }})
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="received-tab" data-bs-toggle="tab" data-bs-target="#received" type="button" role="tab">
+                <i class="fas fa-inbox"></i> Received Emails ({{ received_emails.count }})
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+        <!-- Sent Emails Tab -->
+        <div class="tab-pane fade show active" id="sent" role="tabpanel">
+            {% if sent_emails %}
+                <div class="list-group">
+                    {% for email in sent_emails %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h5 class="mb-1">
+                                        <i class="fas fa-user"></i>
+                                        To: {{ email.recipient.get_full_name|default:email.recipient.username }}
+                                    </h5>
+                                    <p class="mb-1"><strong>{{ email.subject }}</strong></p>
+                                    <p class="mb-1 text-muted">{{ email.message|truncatewords:30 }}</p>
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock"></i> {{ email.sent_at|date:"M d, Y g:i A" }}
+                                    </small>
+                                </div>
+                                <div>
+                                    {% if email.was_successful %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check"></i> Sent
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger" title="{{ email.error_message }}">
+                                            <i class="fas fa-times"></i> Failed
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    You haven't sent any emails yet.
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Received Emails Tab -->
+        <div class="tab-pane fade" id="received" role="tabpanel">
+            {% if received_emails %}
+                <div class="list-group">
+                    {% for email in received_emails %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h5 class="mb-1">
+                                        <i class="fas fa-user"></i>
+                                        From: {{ email.sender.get_full_name|default:email.sender.username }}
+                                    </h5>
+                                    <p class="mb-1"><strong>{{ email.subject }}</strong></p>
+                                    <p class="mb-1 text-muted">{{ email.message|truncatewords:30 }}</p>
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock"></i> {{ email.sent_at|date:"M d, Y g:i A" }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    You haven't received any emails through the platform yet.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

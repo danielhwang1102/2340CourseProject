@@ -41,7 +41,7 @@ media/
 staticfiles/
 
 # Environment variables
-.env
+
 .env.*
 
 # Editor directories and system files
