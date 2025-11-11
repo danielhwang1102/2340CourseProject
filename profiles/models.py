@@ -179,3 +179,81 @@ class SavedSearch(models.Model):
             display.append("Only open to work")
         
         return '; '.join(display) if display else 'No filters applied'
+    
+class NewMatchNotification(models.Model):
+    """
+    Notifications specifically for new candidate matches on saved searches
+    User Story #15: Notify recruiters about new candidate matches
+    """
+    NOTIFICATION_TYPES = (
+        ('new_match', 'New Candidate Match'),
+    )
+    
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='new_match_notifications'
+    )
+    
+    notification_type = models.CharField(
+        max_length=50,
+        choices=NOTIFICATION_TYPES,
+        default='new_match'
+    )
+    
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    
+    # Link to the saved search results
+    link_url = models.CharField(max_length=500, blank=True)
+    
+    # Reference to the saved search that triggered this notification
+    related_saved_search = models.ForeignKey(
+        SavedSearch,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='match_notifications'
+    )
+    
+    # Tracking
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', '-created_at']),
+            models.Index(fields=['user', 'is_read']),
+        ]
+    
+    def __str__(self):
+        return f"New Match Notification for {self.user.username}: {self.title}"
+    
+    def mark_as_read(self):
+        """Mark notification as read"""
+        if not self.is_read:
+            from django.utils import timezone
+            self.is_read = True
+            self.read_at = timezone.now()
+            self.save(update_fields=['is_read', 'read_at'])
+    
+    @classmethod
+    def create_new_match_notification(cls, recruiter, saved_search, new_count, total_count):
+        """
+        Create a notification for new candidate matches
+        """
+        return cls.objects.create(
+            user=recruiter,
+            notification_type='new_match',
+            title=f"New candidates match '{saved_search.name}'",
+            message=f"{new_count} new candidate(s) match your saved search. You now have {total_count} total matches.",
+            link_url=f"/profiles/saved-search/{saved_search.pk}/run/",
+            related_saved_search=saved_search
+        )
+    
+    @classmethod
+    def get_unread_count(cls, user):
+        """Get count of unread notifications for a user"""
+        return cls.objects.filter(user=user, is_read=False).count()

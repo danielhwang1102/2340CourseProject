@@ -23,8 +23,8 @@
                                     {{ search.name }}
                                 </h5>
                                 {% if search.notify_on_new_matches %}
-                                    <span class="badge bg-success" title="Email notifications enabled">
-                                        <i class="fas fa-bell"></i>
+                                    <span class="badge bg-success" title="Notifications enabled">
+                                        <i class="fas fa-bell"></i> Notifications ON
                                     </span>
                                 {% endif %}
                             </div>
@@ -92,7 +92,7 @@
             <ul>
                 <li>Quickly rerun searches without re-entering filters</li>
                 <li>Track how many candidates match over time</li>
-                <li>Get notified when new matching candidates join</li>
+                <li>Get notified (🔔) when new matching candidates join</li>
             </ul>
             <a href="{% url 'profiles:search_candidates' %}" class="btn btn-primary mt-2">
                 <i class="fas fa-search"></i> Start Your First Search

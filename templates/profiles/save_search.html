@@ -20,7 +20,7 @@
                         <strong>Save this search to:</strong>
                         <ul class="mb-0 mt-2">
                             <li>Quickly rerun it without re-entering filters</li>
-                            <li>Get email notifications when new candidates match</li>
+                            <li>Get in-platform notifications (🔔) when new candidates match</li>
                             <li>Track how many candidates match over time</li>
                         </ul>
                     </div>
@@ -69,10 +69,11 @@
                             <div class="form-check form-switch">
                                 {{ form.notify_on_new_matches }}
                                 <label class="form-check-label" for="{{ form.notify_on_new_matches.id_for_label }}">
-                                    <strong>{{ form.notify_on_new_matches.label }}</strong>
+                                    <i class="fas fa-bell text-primary"></i>
+                                    <strong>Notify me about new matches</strong>
                                     <br>
                                     <small class="text-muted">
-                                        We'll check daily and email you when new candidates match your criteria
+                                        You'll receive in-platform notifications (🔔) when new candidates match your criteria
                                     </small>
                                 </label>
                             </div>

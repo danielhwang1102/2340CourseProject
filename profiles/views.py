@@ -6,7 +6,8 @@ from django.utils import timezone
 import json
 
 from .forms import ProfileForm, CandidateSearchForm, PrivacySettingsForm, SaveSearchForm
-from .models import Profile, Skill, SavedSearch
+from .models import Profile, Skill, SavedSearch, NewMatchNotification
+from django.http import JsonResponse
 from companies.forms import CompanyProfileForm
 from companies.models import Company
 from jobs.models import Job
@@ -426,3 +427,74 @@ def edit_saved_search(request, search_id):
     }
     
     return render(request, 'profiles/save_search.html', context)
+
+@login_required
+def notifications(request):
+    """View all new match notifications for current user"""
+    user_notifications = NewMatchNotification.objects.filter(user=request.user)
+    
+    # Mark all as read if requested
+    if request.GET.get('mark_all_read'):
+        user_notifications.filter(is_read=False).update(is_read=True, read_at=timezone.now())
+        messages.success(request, "All notifications marked as read.")
+        return redirect('profiles:notifications')
+    
+    context = {
+        'notifications': user_notifications,
+        'unread_count': user_notifications.filter(is_read=False).count(),
+    }
+    return render(request, 'profiles/notifications.html', context)
+
+
+@login_required
+def notification_mark_read(request, notification_id):
+    """Mark a single notification as read and redirect to its link"""
+    notification = get_object_or_404(NewMatchNotification, id=notification_id, user=request.user)
+    notification.mark_as_read()
+    
+    # Redirect to the notification's link or back to notifications
+    if notification.link_url:
+        return redirect(notification.link_url)
+    else:
+        return redirect('profiles:notifications')
+
+
+@login_required
+def notification_unread_count(request):
+    """API endpoint to get unread notification count (JSON)"""
+    count = NewMatchNotification.get_unread_count(request.user)
+    return JsonResponse({'unread_count': count})
+
+
+@login_required
+def notification_latest(request):
+    """API endpoint to get latest notifications (JSON)"""
+    notifications = NewMatchNotification.objects.filter(
+        user=request.user
+    ).order_by('-created_at')[:5]
+    
+    data = {
+        'unread_count': NewMatchNotification.get_unread_count(request.user),
+        'notifications': [
+            {
+                'id': n.pk,
+                'title': n.title,
+                'message': n.message,
+                'link_url': n.link_url,
+                'is_read': n.is_read,
+                'created_at': n.created_at.strftime('%b %d, %Y %I:%M %p'),
+                'type': n.notification_type,
+            }
+            for n in notifications
+        ]
+    }
+    return JsonResponse(data)
+
+
+@login_required
+def notification_delete(request, notification_id):
+    """Delete a notification"""
+    notification = get_object_or_404(NewMatchNotification, id=notification_id, user=request.user)
+    notification.delete()
+    messages.success(request, "Notification deleted.")
+    return redirect('profiles:notifications')

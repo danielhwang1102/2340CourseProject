@@ -15,10 +15,19 @@ urlpatterns = [
     path('search/', views.search_candidates, name='search_candidates'),
     path('candidate/<int:profile_id>/', views.candidate_detail, name='candidate_detail'),
     
-    # Saved Searches (NEW - User Story #15)
+    # Saved Searches
     path('saved-searches/', views.saved_searches, name='saved_searches'),
     path('save-search/', views.save_search, name='save_search'),
     path('saved-search/<int:search_id>/run/', views.run_saved_search, name='run_saved_search'),
     path('saved-search/<int:search_id>/edit/', views.edit_saved_search, name='edit_saved_search'),
     path('saved-search/<int:search_id>/delete/', views.delete_saved_search, name='delete_saved_search'),
+    
+    # Notifications (NEW)
+    path('notifications/', views.notifications, name='notifications'),
+    path('notification/<int:notification_id>/read/', views.notification_mark_read, name='notification_mark_read'),
+    path('notification/<int:notification_id>/delete/', views.notification_delete, name='notification_delete'),
+    
+    # Notification API endpoints
+    path('api/notifications/unread-count/', views.notification_unread_count, name='notification_unread_count'),
+    path('api/notifications/latest/', views.notification_latest, name='notification_latest'),
 ]

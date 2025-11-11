@@ -64,6 +64,42 @@
                         </li>
                     {% endif %}
                     
+                    <li class="nav-item dropdown">
+                        <a class="nav-link position-relative" href="#" id="notificationDropdown" role="button" 
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-bell"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
+                                id="notification-badge" style="display: none; font-size: 0.65rem;">
+                                0
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" style="width: 350px; max-height: 400px; overflow-y: auto;">
+                            <li>
+                                <h6 class="dropdown-header d-flex justify-content-between align-items-center">
+                                    <span><i class="fas fa-bell"></i>Match Notifications</span>
+                                    <a href="{% url 'profiles:notifications' %}?mark_all_read=1" class="btn btn-sm btn-link text-decoration-none" style="font-size: 0.8rem;">
+                                        Mark all read
+                                    </a>
+                                </h6>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            
+                            <!-- Notifications loaded via JavaScript -->
+                            <div id="notification-list">
+                                <li class="dropdown-item text-center text-muted">
+                                    <small>Loading notifications...</small>
+                                </li>
+                            </div>
+                            
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-center" href="{% url 'profiles:notifications' %}">
+                                    <small><i class="fas fa-list"></i> View All Notifications</small>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
                     <!-- Messages Link with Unread Badge -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle position-relative" href="#" id="messagesDropdown" role="button" data-bs-toggle="dropdown">
