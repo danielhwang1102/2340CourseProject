@@ -48,10 +48,19 @@
                                 </a></li>
                             </ul>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'profiles:search_candidates' %}">
-                                <i class="fas fa-users"></i> Search Candidates
+                        
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="candidatesDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-users"></i> Candidates
                             </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{% url 'profiles:search_candidates' %}">
+                                    <i class="fas fa-search"></i> Search Candidates
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'profiles:saved_searches' %}">
+                                    <i class="fas fa-bookmark"></i> Saved Searches
+                                </a></li>
+                            </ul>
                         </li>
                     {% endif %}
                     

@@ -6,8 +6,25 @@
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-12">
-            <h1><i class="fas fa-search"></i> Search Candidates</h1>
-            <p class="text-muted">Find qualified candidates that match your job requirements</p>
+            <!-- Header with Save Button -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h1><i class="fas fa-search"></i> Search Candidates</h1>
+                    {% if is_saved_search %}
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-bookmark text-primary"></i> 
+                            Running saved search: <strong>{{ saved_search.name }}</strong>
+                        </p>
+                    {% else %}
+                        <p class="text-muted mb-0">Find qualified candidates that match your job requirements</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <a href="{% url 'profiles:saved_searches' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-bookmark"></i> My Saved Searches
+                    </a>
+                </div>
+            </div>
             <hr>
         </div>
     </div>
@@ -20,7 +37,7 @@
                     <h5 class="mb-0"><i class="fas fa-filter"></i> Filters</h5>
                 </div>
                 <div class="card-body">
-                    <form method="get" action="{% url 'profiles:search_candidates' %}">
+                    <form method="get" action="{% url 'profiles:search_candidates' %}" id="searchForm">
                         <!-- Keywords -->
                         <div class="mb-3">
                             {{ form.keywords.label_tag }}
@@ -72,6 +89,13 @@
                         <a href="{% url 'profiles:search_candidates' %}" class="btn btn-secondary w-100 mt-2">
                             <i class="fas fa-redo"></i> Reset
                         </a>
+                        
+                        <!-- Save Search Button (only if results exist and not already saved) -->
+                        {% if request.GET and not is_saved_search %}
+                            <button type="button" class="btn btn-success w-100 mt-2" onclick="saveCurrentSearch()">
+                                <i class="fas fa-bookmark"></i> Save This Search
+                            </button>
+                        {% endif %}
                     </form>
                 </div>
             </div>
@@ -80,8 +104,17 @@
         <!-- Search Results -->
         <div class="col-md-9">
             {% if total_results > 0 %}
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> Found <strong>{{ total_results }}</strong> candidate{{ total_results|pluralize }}
+                <!-- Results header with save button -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="alert alert-info mb-0 flex-grow-1 me-2">
+                        <i class="fas fa-info-circle"></i> 
+                        Found <strong>{{ total_results }}</strong> candidate{{ total_results|pluralize }}
+                    </div>
+                    {% if request.GET and not is_saved_search %}
+                        <button type="button" class="btn btn-success" onclick="saveCurrentSearch()">
+                            <i class="fas fa-bookmark"></i> Save Search
+                        </button>
+                    {% endif %}
                 </div>
 
                 <div class="row">
@@ -204,4 +237,14 @@
         </div>
     </div>
 </div>
+
+<!-- JavaScript for Save Search -->
+<script>
+function saveCurrentSearch() {
+    const form = document.getElementById('searchForm');
+    const formData = new FormData(form);
+    const params = new URLSearchParams(formData).toString();
+    window.location.href = "{% url 'profiles:save_search' %}?" + params;
+}
+</script>
 {% endblock %}

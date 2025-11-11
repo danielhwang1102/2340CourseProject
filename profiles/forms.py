@@ -1,5 +1,5 @@
 from django import forms
-from .models import Profile, Skill
+from .models import Profile, Skill, SavedSearch
 
 class ProfileCompletionForm(forms.ModelForm):
     skills = forms.ModelMultipleChoiceField(
@@ -149,3 +149,30 @@ class CandidateSearchForm(forms.Form):
         }),
         label='Certifications'
     )
+
+class SaveSearchForm(forms.ModelForm):
+    """Form to save a candidate search"""
+    
+    class Meta:
+        model = SavedSearch
+        fields = ['name', 'description', 'notify_on_new_matches']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., Senior Python Developers in Atlanta',
+                'required': True
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Optional: Describe what you\'re looking for...'
+            }),
+            'notify_on_new_matches': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'name': 'Search Name',
+            'description': 'Description (Optional)',
+            'notify_on_new_matches': 'Email me when new candidates match this search'
+        }

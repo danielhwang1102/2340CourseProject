@@ -110,3 +110,72 @@ class Profile(models.Model):
         """Check if profile has minimum required information"""
         required_fields = [self.headline, self.bio, self.location]
         return all(field for field in required_fields) and self.skills.exists()
+    
+class SavedSearch(models.Model):
+    """
+    Model to store recruiter's saved candidate searches
+    User Story #15: Save candidate search criteria
+    """
+    recruiter = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE,
+        related_name='saved_searches',
+        limit_choices_to={'user_type': 'recruiter'}
+    )
+    
+    # Search metadata
+    name = models.CharField(
+        max_length=200,
+        help_text="Name for this saved search (e.g., 'Senior Python Developers in Atlanta')"
+    )
+    description = models.TextField(
+        blank=True,
+        help_text="Optional description of what you're looking for"
+    )
+    
+    # Search criteria (stored as JSON)
+    search_criteria = models.JSONField(
+        help_text="JSON object containing all search filters"
+    )
+    
+    # Notification settings
+    notify_on_new_matches = models.BooleanField(
+        default=True,
+        verbose_name="Email me when new matches appear"
+    )
+    
+    # Tracking
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    last_run_at = models.DateTimeField(null=True, blank=True)
+    last_match_count = models.IntegerField(default=0)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Saved Search'
+        verbose_name_plural = 'Saved Searches'
+    
+    def __str__(self):
+        return f"{self.name} (by {self.recruiter.username})"
+    
+    def get_criteria_display(self):
+        """Return human-readable version of search criteria"""
+        criteria = self.search_criteria
+        display = []
+        
+        if criteria.get('keywords'):
+            display.append(f"Keywords: {criteria['keywords']}")
+        if criteria.get('location'):
+            display.append(f"Location: {criteria['location']}")
+        if criteria.get('min_experience'):
+            display.append(f"Min Experience: {criteria['min_experience']} years")
+        if criteria.get('skills'):
+            display.append(f"Skills: {', '.join(criteria['skills'])}")
+        if criteria.get('education_keyword'):
+            display.append(f"Education: {criteria['education_keyword']}")
+        if criteria.get('certification_keyword'):
+            display.append(f"Certification: {criteria['certification_keyword']}")
+        if criteria.get('open_to_work'):
+            display.append("Only open to work")
+        
+        return '; '.join(display) if display else 'No filters applied'
