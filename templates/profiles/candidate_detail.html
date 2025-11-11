@@ -45,27 +45,29 @@
                         </div>
                     {% endif %}
 
-                    <!-- Current Position & Experience -->
-                    <div class="mb-4">
-                        <h4><i class="fas fa-briefcase text-primary"></i> Professional Information</h4>
-                        {% if profile.current_position %}
-                            <p><strong>Current Position:</strong> {{ profile.current_position }}</p>
-                        {% endif %}
-                        {% if profile.years_experience %}
-                            <p><strong>Years of Experience:</strong> {{ profile.years_experience }} years</p>
-                        {% endif %}
-                    </div>
+                    <!-- Current Position & Experience - RESPECT PRIVACY -->
+                    {% if profile.show_experience %}
+                        <div class="mb-4">
+                            <h4><i class="fas fa-briefcase text-primary"></i> Professional Information</h4>
+                            {% if profile.current_position %}
+                                <p><strong>Current Position:</strong> {{ profile.current_position }}</p>
+                            {% endif %}
+                            {% if profile.years_experience %}
+                                <p><strong>Years of Experience:</strong> {{ profile.years_experience }} years</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
 
-                    <!-- Location -->
-                    {% if profile.location %}
+                    <!-- Location - RESPECT PRIVACY -->
+                    {% if profile.show_location and profile.location %}
                         <div class="mb-4">
                             <h4><i class="fas fa-map-marker-alt text-primary"></i> Location</h4>
                             <p>{{ profile.location }}</p>
                         </div>
                     {% endif %}
 
-                    <!-- Skills -->
-                    {% if profile.skills.all %}
+                    <!-- Skills - RESPECT PRIVACY -->
+                    {% if profile.show_skills and profile.skills.all %}
                         <div class="mb-4">
                             <h4><i class="fas fa-tools text-primary"></i> Skills</h4>
                             <div>
@@ -76,46 +78,48 @@
                         </div>
                     {% endif %}
 
-                    <!-- Education -->
-                    {% if profile.education %}
+                    <!-- Education - RESPECT PRIVACY -->
+                    {% if profile.show_education and profile.education %}
                         <div class="mb-4">
                             <h4><i class="fas fa-graduation-cap text-primary"></i> Education</h4>
                             <p>{{ profile.education|linebreaks }}</p>
                         </div>
                     {% endif %}
 
-                    <!-- Certifications -->
-                    {% if profile.certifications %}
+                    <!-- Certifications - RESPECT PRIVACY -->
+                    {% if profile.show_certifications and profile.certifications %}
                         <div class="mb-4">
                             <h4><i class="fas fa-certificate text-primary"></i> Certifications</h4>
                             <p>{{ profile.certifications|linebreaks }}</p>
                         </div>
                     {% endif %}
 
-                    <!-- Links -->
-                    <div class="mb-4">
-                        <h4><i class="fas fa-link text-primary"></i> Links</h4>
-                        <div class="d-flex gap-3">
-                            {% if profile.website %}
-                                <a href="{{ profile.website }}" target="_blank" class="btn btn-outline-primary">
-                                    <i class="fas fa-globe"></i> Website
-                                </a>
-                            {% endif %}
-                            {% if profile.linkedin %}
-                                <a href="{{ profile.linkedin }}" target="_blank" class="btn btn-outline-primary">
-                                    <i class="fab fa-linkedin"></i> LinkedIn
-                                </a>
-                            {% endif %}
-                            {% if profile.github %}
-                                <a href="{{ profile.github }}" target="_blank" class="btn btn-outline-dark">
-                                    <i class="fab fa-github"></i> GitHub
-                                </a>
-                            {% endif %}
+                    <!-- Links - RESPECT PRIVACY -->
+                    {% if profile.show_links %}
+                        <div class="mb-4">
+                            <h4><i class="fas fa-link text-primary"></i> Links</h4>
+                            <div class="d-flex gap-3">
+                                {% if profile.website %}
+                                    <a href="{{ profile.website }}" target="_blank" class="btn btn-outline-primary">
+                                        <i class="fas fa-globe"></i> Website
+                                    </a>
+                                {% endif %}
+                                {% if profile.linkedin %}
+                                    <a href="{{ profile.linkedin }}" target="_blank" class="btn btn-outline-primary">
+                                        <i class="fab fa-linkedin"></i> LinkedIn
+                                    </a>
+                                {% endif %}
+                                {% if profile.github %}
+                                    <a href="{{ profile.github }}" target="_blank" class="btn btn-outline-dark">
+                                        <i class="fab fa-github"></i> GitHub
+                                    </a>
+                                {% endif %}
+                            </div>
                         </div>
-                    </div>
+                    {% endif %}
 
-                    <!-- Resume -->
-                    {% if profile.resume %}
+                    <!-- Resume - RESPECT PRIVACY -->
+                    {% if profile.show_resume and profile.resume %}
                         <div class="mb-4">
                             <h4><i class="fas fa-file-pdf text-primary"></i> Resume</h4>
                             <a href="{{ profile.resume.url }}" target="_blank" class="btn btn-success">
@@ -134,7 +138,12 @@
                     <h5 class="mb-0">Contact Information</h5>
                 </div>
                 <div class="card-body">
-                    <p><strong>Email:</strong> {{ profile.user.email }}</p>
+                    <!-- Email - RESPECT PRIVACY -->
+                    {% if profile.show_email %}
+                        <p><strong>Email:</strong> {{ profile.user.email }}</p>
+                    {% else %}
+                        <p class="text-muted"><em>Email hidden by user</em></p>
+                    {% endif %}
                     
                     {% if user.is_authenticated and user.user_type == 'recruiter' and user != profile.user %}
                         <div class="d-grid gap-2">
@@ -143,15 +152,17 @@
                                 <i class="fas fa-comment"></i> Send Platform Message
                             </a>
                             
-                            <!-- Email Button (NEW) -->
-                            <a href="{% url 'emails:email_candidate' profile.user.username %}" class="btn btn-success">
-                                <i class="fas fa-envelope"></i> Send Email
-                            </a>
+                            <!-- Email Button (only if email is visible) -->
+                            {% if profile.show_email %}
+                                <a href="{% url 'emails:email_candidate' profile.user.username %}" class="btn btn-success">
+                                    <i class="fas fa-envelope"></i> Send Email
+                                </a>
+                            {% endif %}
                         </div>
                         <p class="text-muted mt-2 mb-0">
                             <small>
                                 <i class="fas fa-info-circle"></i> 
-                                Choose platform messaging for quick replies or email for formal communication
+                                Choose platform messaging for quick replies{% if profile.show_email %} or email for formal communication{% endif %}
                             </small>
                         </p>
                     {% else %}

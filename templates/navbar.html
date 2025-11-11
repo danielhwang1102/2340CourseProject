@@ -55,7 +55,7 @@
                         </li>
                     {% endif %}
                     
-                    <!-- NEW: Messages Link with Unread Badge (User Story #13) -->
+                    <!-- Messages Link with Unread Badge -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle position-relative" href="#" id="messagesDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-envelope"></i> Messages
@@ -78,6 +78,7 @@
                         </ul>
                     </li>
                     
+                    <!-- User Dropdown -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user"></i> {{ user.username }}
@@ -89,6 +90,14 @@
                             <li><a class="dropdown-item" href="{% url 'profiles:view_profile' %}">
                                 <i class="fas fa-user"></i> View Profile
                             </a></li>
+                            
+                            <!-- ADD THIS: Privacy Settings (Job Seekers Only) -->
+                            {% if user.user_type == 'job_seeker' %}
+                            <li><a class="dropdown-item" href="{% url 'profiles:privacy_settings' %}">
+                                <i class="fas fa-shield-alt"></i> Privacy Settings
+                            </a></li>
+                            {% endif %}
+                            
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{% url 'account_logout' %}">
                                 <i class="fas fa-sign-out-alt"></i> Logout

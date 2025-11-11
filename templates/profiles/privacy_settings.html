@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Privacy Settings{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-shield-alt"></i> Privacy Settings
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">
+                        Control what information recruiters can see on your profile.
+                    </p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Profile Visibility -->
+                        <div class="card mb-4 border-primary">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <i class="fas fa-eye text-primary"></i> Profile Visibility
+                                </h5>
+                                <div class="mb-3">
+                                    <label for="{{ form.visibility.id_for_label }}" class="form-label">
+                                        <strong>Who can see your profile?</strong>
+                                    </label>
+                                    {{ form.visibility }}
+                                    <small class="form-text text-muted d-block mt-2">
+                                        <strong>Public:</strong> Visible to all recruiters<br>
+                                        <strong>Private:</strong> Hidden from search results
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Open to Work Status -->
+                        <div class="card mb-4 border-success">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <i class="fas fa-briefcase text-success"></i> Job Search Status
+                                </h5>
+                                <div class="form-check form-switch">
+                                    {{ form.open_to_work }}
+                                    <label class="form-check-label" for="{{ form.open_to_work.id_for_label }}">
+                                        <strong>Open to Work</strong>
+                                        <br>
+                                        <small class="text-muted">Show a badge indicating you're actively seeking opportunities</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contact Information -->
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <i class="fas fa-address-card"></i> Contact Information
+                                </h5>
+                                
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.show_email }}
+                                    <label class="form-check-label" for="{{ form.show_email.id_for_label }}">
+                                        <strong>Show Email Address</strong>
+                                        <br>
+                                        <small class="text-muted">Allow recruiters to see your email</small>
+                                    </label>
+                                </div>
+
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.show_phone }}
+                                    <label class="form-check-label" for="{{ form.show_phone.id_for_label }}">
+                                        <strong>Show Phone Number</strong>
+                                        <br>
+                                        <small class="text-muted">Display your phone number on your profile (if provided)</small>
+                                    </label>
+                                </div>
+
+                                <div class="form-check form-switch">
+                                    {{ form.show_location }}
+                                    <label class="form-check-label" for="{{ form.show_location.id_for_label }}">
+                                        <strong>Show Location</strong>
+                                        <br>
+                                        <small class="text-muted">Display your city and location</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Profile Sections -->
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <i class="fas fa-user-circle"></i> Profile Sections
+                                </h5>
+                                
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.show_experience }}
+                                    <label class="form-check-label" for="{{ form.show_experience.id_for_label }}">
+                                        <strong>Show Work Experience</strong>
+                                        <br>
+                                        <small class="text-muted">Display your employment history and current position</small>
+                                    </label>
+                                </div>
+
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.show_education }}
+                                    <label class="form-check-label" for="{{ form.show_education.id_for_label }}">
+                                        <strong>Show Education</strong>
+                                        <br>
+                                        <small class="text-muted">Display your educational background</small>
+                                    </label>
+                                </div>
+
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.show_skills }}
+                                    <label class="form-check-label" for="{{ form.show_skills.id_for_label }}">
+                                        <strong>Show Skills</strong>
+                                        <br>
+                                        <small class="text-muted">Display your skills and competencies</small>
+                                    </label>
+                                </div>
+
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.show_certifications }}
+                                    <label class="form-check-label" for="{{ form.show_certifications.id_for_label }}">
+                                        <strong>Show Certifications</strong>
+                                        <br>
+                                        <small class="text-muted">Display your professional certifications</small>
+                                    </label>
+                                </div>
+
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.show_links }}
+                                    <label class="form-check-label" for="{{ form.show_links.id_for_label }}">
+                                        <strong>Show External Links</strong>
+                                        <br>
+                                        <small class="text-muted">Display your website, LinkedIn, and GitHub links</small>
+                                    </label>
+                                </div>
+
+                                <div class="form-check form-switch">
+                                    {{ form.show_resume }}
+                                    <label class="form-check-label" for="{{ form.show_resume.id_for_label }}">
+                                        <strong>Allow Resume Download</strong>
+                                        <br>
+                                        <small class="text-muted">Let recruiters download your resume file</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Save Button -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save"></i> Save Privacy Settings
+                            </button>
+                            <a href="{% url 'profiles:view_profile' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

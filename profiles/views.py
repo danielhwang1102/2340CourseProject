@@ -5,7 +5,7 @@ from django.db.models import Count, Q
 from django.contrib import messages
 
 import companies
-from .forms import ProfileForm, CandidateSearchForm
+from .forms import ProfileForm, CandidateSearchForm, PrivacySettingsForm  # ADD PrivacySettingsForm
 from .models import Profile, Skill
 from companies.forms import CompanyProfileForm
 from companies.models import Company
@@ -44,6 +44,35 @@ def view_profile(request):
     else:
         profile_instance = getattr(user, 'profile', None)
     return render(request, 'profiles/view_profile.html', {'profile': profile_instance})
+
+
+# ADD THIS NEW VIEW
+@login_required
+def privacy_settings(request):
+    """Privacy settings page for job seekers - User Story #5"""
+    
+    # Only job seekers can access privacy settings
+    if request.user.user_type != 'job_seeker':
+        messages.error(request, "Only job seekers can access privacy settings.")
+        return redirect('profiles:view_profile')
+    
+    # Get or create profile
+    profile, created = Profile.objects.get_or_create(user=request.user)
+    
+    if request.method == 'POST':
+        form = PrivacySettingsForm(request.POST, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Privacy settings updated successfully!")
+            return redirect('profiles:privacy_settings')
+    else:
+        form = PrivacySettingsForm(instance=profile)
+    
+    context = {
+        'form': form,
+        'profile': profile,
+    }
+    return render(request, 'profiles/privacy_settings.html', context)
 
 
 @login_required

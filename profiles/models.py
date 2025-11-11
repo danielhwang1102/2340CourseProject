@@ -34,6 +34,53 @@ class Profile(models.Model):
     VISIBILITY_CHOICES = (('public', 'Public'), ('private', 'Private'))
     visibility = models.CharField(max_length=10, choices=VISIBILITY_CHOICES, default='public')
     
+    # ADD THESE NEW PRIVACY FIELDS
+    show_email = models.BooleanField(
+        default=True, 
+        verbose_name="Show Email to Recruiters",
+        help_text="Allow recruiters to see your email address"
+    )
+    show_phone = models.BooleanField(
+        default=True,
+        verbose_name="Show Phone Number",
+        help_text="Display your phone number on your profile (if provided)"
+    )
+    show_location = models.BooleanField(
+        default=True,
+        verbose_name="Show Location",
+        help_text="Display your location to recruiters"
+    )
+    show_experience = models.BooleanField(
+        default=True,
+        verbose_name="Show Work Experience",
+        help_text="Display your work history and current position"
+    )
+    show_education = models.BooleanField(
+        default=True,
+        verbose_name="Show Education",
+        help_text="Display your educational background"
+    )
+    show_skills = models.BooleanField(
+        default=True,
+        verbose_name="Show Skills",
+        help_text="Display your skills to recruiters"
+    )
+    show_links = models.BooleanField(
+        default=True,
+        verbose_name="Show External Links",
+        help_text="Display your website, LinkedIn, and GitHub links"
+    )
+    show_certifications = models.BooleanField(
+        default=True,
+        verbose_name="Show Certifications",
+        help_text="Display your professional certifications"
+    )
+    show_resume = models.BooleanField(
+        default=True,
+        verbose_name="Show Resume Download",
+        help_text="Allow recruiters to download your resume"
+    )
+    
     # Preferences
     open_to_work = models.BooleanField(default=True)
     preferred_salary_min = models.PositiveIntegerField(blank=True, null=True)

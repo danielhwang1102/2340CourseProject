@@ -44,6 +44,40 @@ class ProfileForm(forms.ModelForm):
         }
 
 
+# ADD THIS NEW FORM
+class PrivacySettingsForm(forms.ModelForm):
+    """Form for job seekers to manage privacy settings"""
+    
+    class Meta:
+        model = Profile
+        fields = [
+            'show_email',
+            'show_phone',
+            'show_location',
+            'show_experience',
+            'show_education',
+            'show_skills',
+            'show_links',
+            'show_certifications',
+            'show_resume',
+            'open_to_work',
+            'visibility',
+        ]
+        widgets = {
+            'show_email': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'show_phone': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'show_location': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'show_experience': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'show_education': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'show_skills': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'show_links': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'show_certifications': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'show_resume': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'open_to_work': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'visibility': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+
 class CandidateSearchForm(forms.Form):
     """Form for recruiters to search for candidates"""
     

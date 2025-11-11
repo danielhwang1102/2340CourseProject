@@ -8,7 +8,10 @@ urlpatterns = [
     path('view/', views.view_profile, name='view_profile'), 
     path('recommendations/', views.recommend_jobs, name='recommend_jobs'),
     
-    # Recruiter candidate search (NEW)
+    # Privacy Settings (NEW)
+    path('privacy-settings/', views.privacy_settings, name='privacy_settings'),
+    
+    # Recruiter candidate search
     path('search/', views.search_candidates, name='search_candidates'),
     path('candidate/<int:profile_id>/', views.candidate_detail, name='candidate_detail'),
 ]
