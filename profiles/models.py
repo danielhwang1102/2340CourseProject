@@ -18,6 +18,22 @@ class Profile(models.Model):
     bio = models.TextField(blank=True)
     skills = models.ManyToManyField(Skill, blank=True)
     location = models.CharField(max_length=100, blank=True)
+
+    latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        help_text="Latitude coordinate (auto-filled from map)"
+    )
+    longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        help_text="Longitude coordinate (auto-filled from map)"
+    )
+
     website = models.URLField(blank=True, validators=[URLValidator()])
     linkedin = models.URLField(blank=True, validators=[URLValidator()])
     github = models.URLField(blank=True, validators=[URLValidator()])

@@ -16,6 +16,7 @@ from jobs.models import Job
 @login_required
 def edit_profile(request):
     user = request.user
+    
     if user.user_type == 'recruiter':
         form_class = CompanyProfileForm
         company = Company.objects.filter(created_by=user).first()
@@ -27,12 +28,25 @@ def edit_profile(request):
     if request.method == 'POST':
         form = form_class(request.POST, request.FILES, instance=profile_instance)
         if form.is_valid():
-            form.save()
+            profile = form.save(commit=False)
+            
+            # ✅ SAVE COORDINATES FROM HIDDEN FIELDS (for job seekers)
+            if user.user_type == 'job_seeker':
+                profile.latitude = form.cleaned_data.get('latitude')
+                profile.longitude = form.cleaned_data.get('longitude')
+            
+            profile.save()
+            form.save_m2m()  # Save many-to-many relationships (skills)
+            
+            messages.success(request, 'Profile updated successfully!')
             return redirect('profiles:view_profile')
     else:
         form = form_class(instance=profile_instance)
 
-    return render(request, 'profiles/edit_profile.html', {'form': form})
+    return render(request, 'profiles/edit_profile.html', {
+        'form': form,
+        'is_recruiter': user.user_type == 'recruiter'
+    })
 
 
 @login_required

@@ -29,10 +29,20 @@ class ProfileCompletionForm(forms.ModelForm):
 
 
 class ProfileForm(forms.ModelForm):
+    latitude = forms.DecimalField(
+        required=False,
+        widget=forms.HiddenInput()
+    )
+    longitude = forms.DecimalField(
+        required=False,
+        widget=forms.HiddenInput()
+    )
+
     class Meta:
         model = Profile
         fields = [
             'headline', 'bio', 'skills', 'location',
+            'latitude', 'longitude',
             'website', 'linkedin', 'github', 'resume', 'profile_picture',
             'current_position', 'years_experience', 'education', 'certifications',
             'visibility', 'open_to_work', 'preferred_salary_min', 'preferred_salary_max'
@@ -41,6 +51,11 @@ class ProfileForm(forms.ModelForm):
             'bio': forms.Textarea(attrs={'rows': 4}),
             'education': forms.Textarea(attrs={'rows': 3}),
             'certifications': forms.Textarea(attrs={'rows': 3}),
+            'location': forms.TextInput(attrs={
+                'class': 'form-control',
+                'id': 'location-input',
+                'placeholder': 'Atlanta, GA'
+            }),
         }
 
 

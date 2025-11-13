@@ -1,12 +1,32 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
 
+{% block extra_css %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #location-map {
+        height: 400px;
+        width: 100%;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    .location-section {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-md-10">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header bg-primary text-white">
                     <h2>
                         <i class="fas fa-edit"></i>
                         {% if is_recruiter %}
@@ -17,24 +37,161 @@
                     </h2>
                 </div>
                 <div class="card-body">
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
-                        {{ form|crispy }}
                         
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+                        {% if not is_recruiter %}
+                        <!-- LOCATION SECTION WITH MAP (Job Seekers Only) -->
+                        <div class="location-section">
+                            <h4 class="mb-3">
+                                <i class="fas fa-map-marker-alt text-primary"></i> Your Location
+                            </h4>
+                            
+                            <!-- Text Input with Search -->
+                            <div class="mb-3">
+                                <label for="id_location" class="form-label">
+                                    <strong>Location</strong>
+                                </label>
+                                <div class="input-group">
+                                    <!-- ✅ UPDATED: Explicitly set the id and class -->
+                                    <input type="text" 
+                                        name="location" 
+                                        id="id_location"
+                                        class="form-control"
+                                        value="{{ form.location.value|default:'' }}"
+                                        placeholder="e.g., Atlanta, GA or San Francisco, CA"
+                                        autocomplete="off">
+                                    <button class="btn btn-outline-primary" type="button" id="search-location-btn">
+                                        <i class="fas fa-search"></i> Search
+                                    </button>
+                                    <button class="btn btn-outline-success" type="button" id="current-location-btn">
+                                        <i class="fas fa-crosshairs"></i> Current Location
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted">
+                                    Type your location above and click Search, or click on the map below
+                                </small>
+                            </div>
+                            
+                            <!-- Interactive Map -->
+                            <div id="location-map"></div>
+                            
+                            <!-- Hidden coordinate fields -->
+                            {{ form.latitude }}
+                            {{ form.longitude }}
+                            
+                            <!-- Current coordinates display -->
+                            <div id="coordinates-display" class="alert alert-success mt-2" style="display: none;">
+                                <i class="fas fa-check-circle"></i>
+                                <strong>Location Set:</strong>
+                                <span id="selected-address">--</span>
+                                <br>
+                                <small>
+                                    <strong>Coordinates:</strong> 
+                                    <span id="display-lat">--</span>, 
+                                    <span id="display-lng">--</span>
+                                </small>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Rest of form fields -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_headline" class="form-label">Headline</label>
+                                {{ form.headline }}
+                            </div>
+                            
+                            {% if not is_recruiter %}
+                            <div class="col-md-6 mb-3">
+                                <label for="id_current_position" class="form-label">Current Position</label>
+                                {{ form.current_position }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_bio" class="form-label">Bio</label>
+                            {{ form.bio }}
+                        </div>
+                        
+                        {% if not is_recruiter %}
+                        <div class="mb-3">
+                            <label class="form-label">Skills</label>
+                            {{ form.skills }}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_years_experience" class="form-label">Years of Experience</label>
+                                {{ form.years_experience }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_visibility" class="form-label">Profile Visibility</label>
+                                {{ form.visibility }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_education" class="form-label">Education</label>
+                            {{ form.education }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_certifications" class="form-label">Certifications</label>
+                            {{ form.certifications }}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="id_website" class="form-label">Website</label>
+                                {{ form.website }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="id_linkedin" class="form-label">LinkedIn</label>
+                                {{ form.linkedin }}
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="id_github" class="form-label">GitHub</label>
+                                {{ form.github }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_resume" class="form-label">Resume</label>
+                                {{ form.resume }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_profile_picture" class="form-label">Profile Picture</label>
+                                {{ form.profile_picture }}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="id_preferred_salary_min" class="form-label">Preferred Salary Min</label>
+                                {{ form.preferred_salary_min }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="id_preferred_salary_max" class="form-label">Preferred Salary Max</label>
+                                {{ form.preferred_salary_max }}
+                            </div>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            {{ form.open_to_work }}
+                            <label class="form-check-label" for="id_open_to_work">
+                                Open to Work
+                            </label>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                             <a href="{% url 'profiles:view_profile' %}" class="btn btn-secondary me-md-2">
                                 <i class="fas fa-times"></i> Cancel
                             </a>
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary btn-lg">
                                 <i class="fas fa-save"></i> Save Changes
                             </button>
                         </div>
@@ -44,4 +201,171 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% if not is_recruiter %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+// Initialize map variables
+let map;
+let marker;
+let defaultLat = {{ form.latitude.value|default:33.7490 }};
+let defaultLng = {{ form.longitude.value|default:-84.3880 }};
+let defaultZoom = {{ form.latitude.value|yesno:"13,10" }};
+
+// Initialize map on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initMap();
+});
+
+function initMap() {
+    // Create map
+    map = L.map('location-map').setView([defaultLat, defaultLng], defaultZoom);
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+    
+    // Add marker if location already exists
+    {% if form.latitude.value and form.longitude.value %}
+        addMarker(defaultLat, defaultLng);
+        updateCoordinatesDisplay(defaultLat, defaultLng, '{{ form.location.value|default:"" }}');
+    {% endif %}
+    
+    // Click on map to set location
+    map.on('click', function(e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+        addMarker(lat, lng);
+        updateCoordinates(lat, lng);
+        reverseGeocode(lat, lng);
+    });
+}
+
+function addMarker(lat, lng) {
+    if (marker) {
+        map.removeLayer(marker);
+    }
+    
+    marker = L.marker([lat, lng], {
+        draggable: true
+    }).addTo(map);
+    
+    marker.on('dragend', function(e) {
+        const newLat = e.target.getLatLng().lat;
+        const newLng = e.target.getLatLng().lng;
+        updateCoordinates(newLat, newLng);
+        reverseGeocode(newLat, newLng);
+    });
+}
+
+function updateCoordinates(lat, lng) {
+    document.getElementById('id_latitude').value = lat.toFixed(6);
+    document.getElementById('id_longitude').value = lng.toFixed(6);
+    document.getElementById('display-lat').textContent = lat.toFixed(6);
+    document.getElementById('display-lng').textContent = lng.toFixed(6);
+    document.getElementById('coordinates-display').style.display = 'block';
+}
+
+function updateCoordinatesDisplay(lat, lng, address) {
+    updateCoordinates(lat, lng);
+    document.getElementById('selected-address').textContent = address || 'Selected location';
+}
+
+async function reverseGeocode(lat, lng) {
+    try {
+        const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`
+        );
+        const data = await response.json();
+        
+        if (data && data.display_name) {
+            const address = data.address;
+            let locationStr = '';
+            
+            if (address.city || address.town || address.village) {
+                locationStr = address.city || address.town || address.village;
+            }
+            if (address.state) {
+                locationStr += locationStr ? ', ' + address.state : address.state;
+            }
+            
+            if (!locationStr) {
+                locationStr = data.display_name.split(',').slice(0, 2).join(',');
+            }
+            
+            document.getElementById('id_location').value = locationStr;
+            document.getElementById('selected-address').textContent = locationStr;
+        }
+    } catch (error) {
+        console.error('Reverse geocoding failed:', error);
+    }
+}
+
+async function geocodeAddress(address) {
+    try {
+        const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`
+        );
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+            const lat = parseFloat(data[0].lat);
+            const lng = parseFloat(data[0].lon);
+            
+            map.setView([lat, lng], 13);
+            addMarker(lat, lng);
+            updateCoordinatesDisplay(lat, lng, address);
+        } else {
+            alert('Location not found. Please try a different search.');
+        }
+    } catch (error) {
+        console.error('Geocoding failed:', error);
+        alert('Error searching for location. Please try again.');
+    }
+}
+
+document.getElementById('search-location-btn').addEventListener('click', function() {
+    const address = document.getElementById('id_location').value.trim();
+    if (address) {
+        geocodeAddress(address);
+    } else {
+        alert('Please enter a location to search.');
+    }
+});
+
+document.getElementById('id_location').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('search-location-btn').click();
+    }
+});
+
+document.getElementById('current-location-btn').addEventListener('click', function() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                
+                map.setView([lat, lng], 13);
+                addMarker(lat, lng);
+                updateCoordinates(lat, lng);
+                reverseGeocode(lat, lng);
+            },
+            function(error) {
+                alert('Unable to get current location: ' + error.message);
+            }
+        );
+    } else {
+        alert('Geolocation is not supported by your browser.');
+    }
+});
+</script>
+{% endif %}
 {% endblock %}
