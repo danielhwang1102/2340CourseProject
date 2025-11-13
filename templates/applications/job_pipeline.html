@@ -1,0 +1,355 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Pipeline - {{ job.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pipeline-container {
+        display: flex;
+        gap: 1rem;
+        overflow-x: auto;
+        padding: 1rem 0;
+        min-height: 600px;
+    }
+    
+    .pipeline-column {
+        flex: 0 0 280px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        min-height: 500px;
+    }
+    
+    .pipeline-column-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    .pipeline-column-title {
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+    
+    .pipeline-column-count {
+        background: #6c757d;
+        color: white;
+        border-radius: 12px;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .application-card {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 0.875rem;
+        margin-bottom: 0.75rem;
+        cursor: move;
+        transition: all 0.2s;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .application-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        transform: translateY(-2px);
+    }
+    
+    .application-card.sortable-ghost {
+        opacity: 0.4;
+        background: #e9ecef;
+    }
+    
+    .application-card.sortable-drag {
+        opacity: 0.8;
+        transform: rotate(2deg);
+    }
+    
+    .applicant-name {
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin-bottom: 0.25rem;
+        color: #212529;
+    }
+    
+    .applicant-info {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+    }
+    
+    .application-date {
+        font-size: 0.75rem;
+        color: #adb5bd;
+    }
+    
+    .card-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #e9ecef;
+    }
+    
+    .card-actions .btn {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    /* Status-specific colors */
+    .column-applied { border-top: 3px solid #17a2b8; }
+    .column-review { border-top: 3px solid #ffc107; }
+    .column-interview_scheduled { border-top: 3px solid #007bff; }
+    .column-interview_completed { border-top: 3px solid #6610f2; }
+    .column-offer { border-top: 3px solid #28a745; }
+    .column-accepted { border-top: 3px solid #20c997; }
+    .column-rejected { border-top: 3px solid #dc3545; }
+    .column-withdrawn { border-top: 3px solid #6c757d; }
+    
+    /* Empty state */
+    .empty-column {
+        text-align: center;
+        padding: 2rem 1rem;
+        color: #adb5bd;
+        font-size: 0.85rem;
+    }
+    
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+        .pipeline-container {
+            flex-direction: column;
+        }
+        .pipeline-column {
+            flex: 1;
+            min-height: auto;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-columns"></i> Applicant Pipeline</h2>
+            <p class="text-muted mb-0">
+                <strong>Job:</strong> {{ job.title }} • 
+                <strong>Total Applicants:</strong> {{ total_applications }}
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'jobs:job_applications' job.pk %}" class="btn btn-outline-secondary">
+                <i class="fas fa-list"></i> List View
+            </a>
+            <a href="{% url 'jobs:job_detail' job.pk %}" class="btn btn-outline-primary">
+                <i class="fas fa-briefcase"></i> Back to Job
+            </a>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="alert alert-info mb-4">
+        <i class="fas fa-info-circle"></i>
+        <strong>Drag & Drop:</strong> Move candidate cards between columns to update their application status.
+        Changes are saved automatically.
+    </div>
+
+    <!-- Kanban Board -->
+    <div class="pipeline-container">
+        {% for status_code, status_label in status_choices %}
+            <div class="pipeline-column column-{{ status_code }}" data-status="{{ status_code }}">
+                <div class="pipeline-column-header">
+                    <span class="pipeline-column-title">
+                        {% if status_code == 'applied' %}📥{% endif %}
+                        {% if status_code == 'review' %}👀{% endif %}
+                        {% if status_code == 'interview_scheduled' %}📞{% endif %}
+                        {% if status_code == 'interview_completed' %}✓{% endif %}
+                        {% if status_code == 'offer' %}💼{% endif %}
+                        {% if status_code == 'accepted' %}✅{% endif %}
+                        {% if status_code == 'rejected' %}❌{% endif %}
+                        {% if status_code == 'withdrawn' %}↩️{% endif %}
+                        {{ status_label }}
+                    </span>
+                    <span class="pipeline-column-count">{{ status_counts|get_item:status_code }}</span>
+                </div>
+
+                <div class="sortable-container" id="column-{{ status_code }}">
+                    {% for app in applications_by_status|get_item:status_code %}
+                        <div class="application-card" data-id="{{ app.id }}" data-status="{{ app.status }}">
+                            <div class="applicant-name">
+                                <i class="fas fa-user-circle"></i>
+                                {{ app.applicant.get_full_name|default:app.applicant.username }}
+                            </div>
+                            
+                            {% if app.applicant.profile %}
+                                <div class="applicant-info">
+                                    {% if app.applicant.profile.headline %}
+                                        {{ app.applicant.profile.headline|truncatewords:8 }}
+                                    {% endif %}
+                                    {% if app.applicant.profile.years_experience %}
+                                        <br><i class="fas fa-briefcase"></i> {{ app.applicant.profile.years_experience }} years
+                                    {% endif %}
+                                    {% if app.applicant.profile.location %}
+                                        <br><i class="fas fa-map-marker-alt"></i> {{ app.applicant.profile.location }}
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+
+                            <div class="application-date">
+                                <i class="fas fa-calendar"></i> Applied {{ app.applied_date|date:"M d, Y" }}
+                            </div>
+
+                            {% if app.notes %}
+                                <div class="mt-2 small text-muted">
+                                    <strong>Notes:</strong> {{ app.notes|truncatewords:15 }}
+                                </div>
+                            {% endif %}
+
+                            <div class="card-actions">
+                                <a href="{% url 'profiles:view_profile_by_username' app.applicant.username %}" 
+                                   class="btn btn-outline-primary btn-sm" target="_blank">
+                                    <i class="fas fa-user"></i> Profile
+                                </a>
+                                <a href="{% url 'messaging:compose_to_user' app.applicant.username %}" 
+                                   class="btn btn-outline-success btn-sm">
+                                    <i class="fas fa-envelope"></i> Message
+                                </a>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="empty-column">
+                            <i class="fas fa-inbox" style="font-size: 2rem; opacity: 0.3;"></i>
+                            <p class="mb-0 mt-2">No applicants</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Sortable.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get CSRF token
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                     document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
+
+    // Initialize Sortable on each column
+    const columns = document.querySelectorAll('.sortable-container');
+    
+    columns.forEach(column => {
+        new Sortable(column, {
+            group: 'applications',
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            dragClass: 'sortable-drag',
+            
+            onEnd: function(evt) {
+                const card = evt.item;
+                const applicationId = card.dataset.id;
+                const newColumn = evt.to;
+                const newStatus = newColumn.id.replace('column-', '');
+                const oldStatus = card.dataset.status;
+                
+                // Don't update if dropped in same column
+                if (oldStatus === newStatus) {
+                    return;
+                }
+                
+                // Update via AJAX
+                updateApplicationStatus(applicationId, newStatus, oldStatus, card);
+            }
+        });
+    });
+
+    function updateApplicationStatus(appId, newStatus, oldStatus, cardElement) {
+        fetch(`/applications/${appId}/update-status-ajax/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({
+                status: newStatus
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update card's data attribute
+                cardElement.dataset.status = newStatus;
+                
+                // Update column counts
+                updateColumnCounts();
+                
+                // Show success message
+                showToast('Success', `Application moved to ${data.status_display}`, 'success');
+            } else {
+                // Revert on error
+                alert('Error: ' + data.error);
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to update status. Please refresh the page.');
+            location.reload();
+        });
+    }
+
+    function updateColumnCounts() {
+        const columns = document.querySelectorAll('.pipeline-column');
+        columns.forEach(col => {
+            const status = col.dataset.status;
+            const container = col.querySelector('.sortable-container');
+            const cards = container.querySelectorAll('.application-card');
+            const count = cards.length;
+            const badge = col.querySelector('.pipeline-column-count');
+            badge.textContent = count;
+            
+            // Show/hide empty state
+            let emptyState = container.querySelector('.empty-column');
+            if (count === 0) {
+                if (!emptyState) {
+                    emptyState = document.createElement('div');
+                    emptyState.className = 'empty-column';
+                    emptyState.innerHTML = '<i class="fas fa-inbox" style="font-size: 2rem; opacity: 0.3;"></i><p class="mb-0 mt-2">No applicants</p>';
+                    container.appendChild(emptyState);
+                }
+            } else {
+                if (emptyState) {
+                    emptyState.remove();
+                }
+            }
+        });
+    }
+
+    function showToast(title, message, type) {
+        // Simple toast notification
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        toast.innerHTML = `
+            <strong>${title}</strong> ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+});
+</script>
+{% endblock %}
