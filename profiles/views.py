@@ -1,9 +1,12 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import get_user_model
 from django.db.models import Count, Q
 from django.contrib import messages
 from django.utils import timezone
 import json
+
+User = get_user_model()
 
 from .forms import ProfileForm, CandidateSearchForm, PrivacySettingsForm, SaveSearchForm
 from .models import Profile, Skill, SavedSearch, NewMatchNotification
@@ -11,6 +14,29 @@ from django.http import JsonResponse
 from companies.forms import CompanyProfileForm
 from companies.models import Company
 from jobs.models import Job
+
+def view_profile_by_username(request, username):
+    """
+    View any user's profile by their username.
+    Shows public information only.
+    """
+    user = get_object_or_404(User, username=username)
+    profile = get_object_or_404(Profile, user=user)
+    
+    # Check if profile is public or if viewer is the owner
+    if profile.visibility == 'private' and request.user != user:
+        return render(request, 'profiles/profile_private.html', {
+            'viewed_user': user
+        })
+    
+    context = {
+        'viewed_user': user,
+        'profile': profile,
+        'is_own_profile': request.user == user,
+        'skills': profile.skills.all(),
+    }
+    
+    return render(request, 'profiles/view_profile.html', context)
 
 
 @login_required

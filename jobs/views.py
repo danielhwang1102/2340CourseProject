@@ -12,6 +12,8 @@ from .models import Job
 from .forms import JobForm, JobFilterForm
 from applications.models import Application
 
+from profiles.models import Profile
+
 
 class RecruiterRequiredMixin(UserPassesTestMixin):
     def test_func(self):
@@ -274,3 +276,85 @@ class JobMapDataAPIView(LoginRequiredMixin, View):
                 })
         
         return JsonResponse({'jobs': filtered_jobs})
+    
+class ApplicantMapView(LoginRequiredMixin, RecruiterRequiredMixin, DetailView):
+    """
+    User Story #18: Show applicants on a map with clustering.
+    Only accessible by the recruiter who posted the job.
+    """
+    model = Job
+    template_name = 'jobs/applicant_map.html'
+    context_object_name = 'job'
+
+    def get_queryset(self):
+        # Only allow viewing applicants for own jobs
+        return Job.objects.filter(posted_by=self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Get all applications for this job
+        applications = Application.objects.filter(
+            job=self.object
+        ).select_related('applicant', 'applicant__profile').order_by('-applied_date')
+        
+        # Prepare applicant data with locations
+        applicant_data = []
+        total_applicants = 0
+        applicants_with_location = 0
+        
+        for app in applications:
+            total_applicants += 1
+            profile = getattr(app.applicant, 'profile', None)
+            
+            # Only include applicants with location data
+            if profile and profile.latitude and profile.longitude:
+                applicants_with_location += 1
+                applicant_data.append({
+                    'id': app.id,
+                    'applicant_id': app.applicant.id,
+                    'name': app.applicant.get_full_name() or app.applicant.username,
+                    'username': app.applicant.username,
+                    'location': profile.location or 'Location not specified',
+                    'latitude': float(profile.latitude),
+                    'longitude': float(profile.longitude),
+                    'status': app.status,
+                    'status_display': app.get_status_display(),
+                    'applied_date': app.applied_date.strftime('%b %d, %Y'),
+                    'profile_url': profile.get_absolute_url(),
+                    'headline': profile.headline or 'No headline',
+                    'years_experience': profile.years_experience,
+                })
+        
+        context['applicants_json'] = json.dumps(applicant_data)
+        context['total_applicants'] = total_applicants
+        context['applicants_with_location'] = applicants_with_location
+        context['applicants_without_location'] = total_applicants - applicants_with_location
+        
+        # Calculate map center
+        if applicant_data:
+            avg_lat = sum(a['latitude'] for a in applicant_data) / len(applicant_data)
+            avg_lng = sum(a['longitude'] for a in applicant_data) / len(applicant_data)
+            context['center_lat'] = avg_lat
+            context['center_lng'] = avg_lng
+            context['default_zoom'] = 6
+        elif self.object.latitude and self.object.longitude:
+            # Center on job location if no applicants with location
+            context['center_lat'] = float(self.object.latitude)
+            context['center_lng'] = float(self.object.longitude)
+            context['default_zoom'] = 10
+        else:
+            # Default to US center
+            context['center_lat'] = 39.8283
+            context['center_lng'] = -98.5795
+            context['default_zoom'] = 4
+        
+        # Add job location for reference
+        if self.object.latitude and self.object.longitude:
+            context['job_location'] = {
+                'latitude': float(self.object.latitude),
+                'longitude': float(self.object.longitude),
+                'name': self.object.get_short_location(),
+            }
+        
+        return context

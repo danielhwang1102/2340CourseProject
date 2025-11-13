@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.core.validators import URLValidator
+from django.urls import reverse
 
 class Skill(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -126,6 +127,10 @@ class Profile(models.Model):
         """Check if profile has minimum required information"""
         required_fields = [self.headline, self.bio, self.location]
         return all(field for field in required_fields) and self.skills.exists()
+
+    def get_absolute_url(self):
+        """Return URL to view this profile."""
+        return reverse('profiles:view_profile_by_username', kwargs={'username': self.user.username})
     
 class SavedSearch(models.Model):
     """

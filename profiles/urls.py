@@ -22,7 +22,7 @@ urlpatterns = [
     path('saved-search/<int:search_id>/edit/', views.edit_saved_search, name='edit_saved_search'),
     path('saved-search/<int:search_id>/delete/', views.delete_saved_search, name='delete_saved_search'),
     
-    # Notifications (NEW)
+    # Notifications
     path('notifications/', views.notifications, name='notifications'),
     path('notification/<int:notification_id>/read/', views.notification_mark_read, name='notification_mark_read'),
     path('notification/<int:notification_id>/delete/', views.notification_delete, name='notification_delete'),
@@ -30,4 +30,7 @@ urlpatterns = [
     # Notification API endpoints
     path('api/notifications/unread-count/', views.notification_unread_count, name='notification_unread_count'),
     path('api/notifications/latest/', views.notification_latest, name='notification_latest'),
+    
+    # ✅ NEW: View any user's profile by username
+    path('<str:username>/', views.view_profile_by_username, name='view_profile_by_username'),
 ]

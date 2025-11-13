@@ -13,11 +13,17 @@ class Application(models.Model):
         ('rejected', 'Rejected'),
         ('withdrawn', 'Withdrawn'),
     )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='applied',
+        help_text="Current application status"
+    )
     
     job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name='applications')
     applicant = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='applications')
     cover_letter = models.TextField(blank=True, help_text="Optional cover letter")
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='applied')
     
     # Tracking
     applied_date = models.DateTimeField(auto_now_add=True)
