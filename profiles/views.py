@@ -8,10 +8,15 @@ import json
 
 User = get_user_model()
 
-from .forms import ProfileForm, CandidateSearchForm, PrivacySettingsForm, SaveSearchForm
+from .forms import (
+    ProfileForm, 
+    ProfileCompletionForm, 
+    CompanyProfileForm, 
+    PrivacySettingsForm,
+    CandidateSearchForm
+)
 from .models import Profile, Skill, SavedSearch, NewMatchNotification
 from django.http import JsonResponse
-from companies.forms import CompanyProfileForm
 from companies.models import Company
 from jobs.models import Job
 
@@ -45,8 +50,22 @@ def edit_profile(request):
     
     if user.user_type == 'recruiter':
         form_class = CompanyProfileForm
-        company = Company.objects.filter(created_by=user).first()
+        
+        # ✅ FIX: Get or create company if it doesn't exist
+        company, created = Company.objects.get_or_create(
+            created_by=user,
+            defaults={
+                'name': f"{user.get_full_name()}'s Company" if user.get_full_name() else f"{user.username}'s Company",
+                'description': '',
+                'location': '',
+            }
+        )
+        
+        if created:
+            messages.info(request, "Company profile created. Please complete your company information.")
+        
         profile_instance = company
+        
     else:
         form_class = ProfileForm
         profile_instance = getattr(user, 'profile', None)
@@ -56,16 +75,28 @@ def edit_profile(request):
         if form.is_valid():
             profile = form.save(commit=False)
             
-            # ✅ SAVE COORDINATES FROM HIDDEN FIELDS (for job seekers)
+            # For job seekers, save coordinates
             if user.user_type == 'job_seeker':
                 profile.latitude = form.cleaned_data.get('latitude')
                 profile.longitude = form.cleaned_data.get('longitude')
             
+            # ✅ For recruiters, ensure created_by is set
+            if user.user_type == 'recruiter':
+                profile.created_by = user
+            
             profile.save()
-            form.save_m2m()  # Save many-to-many relationships (skills)
+            
+            # Save many-to-many for job seekers
+            if hasattr(form, 'save_m2m'):
+                form.save_m2m()
             
             messages.success(request, 'Profile updated successfully!')
             return redirect('profiles:view_profile')
+        else:
+            # ✅ ADD: Show form errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
     else:
         form = form_class(instance=profile_instance)
 

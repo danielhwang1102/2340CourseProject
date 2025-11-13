@@ -1,5 +1,6 @@
 from django import forms
 from .models import Profile, Skill, SavedSearch
+from companies.models import Company
 
 class ProfileCompletionForm(forms.ModelForm):
     skills = forms.ModelMultipleChoiceField(
@@ -191,3 +192,103 @@ class SaveSearchForm(forms.ModelForm):
             'description': 'Description (Optional)',
             'notify_on_new_matches': 'Email me when new candidates match this search'
         }
+
+# ADD THIS NEW FORM
+class CompanyProfileForm(forms.ModelForm):
+    """Form for recruiters to edit company profile"""
+    
+    latitude = forms.DecimalField(
+        required=False,
+        widget=forms.HiddenInput()
+    )
+    longitude = forms.DecimalField(
+        required=False,
+        widget=forms.HiddenInput()
+    )
+    
+    class Meta:
+        model = Company
+        fields = [
+            'name',
+            'description',
+            'website',
+            'logo',
+            'location',
+            'founded_year',
+            'employees_count',
+        ]
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., Tech Solutions Inc.',
+                'required': True
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 5,
+                'placeholder': 'Tell job seekers about your company, mission, culture, and what makes you unique...'
+            }),
+            'website': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://www.yourcompany.com'
+            }),
+            'logo': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*'
+            }),
+            'location': forms.TextInput(attrs={
+                'class': 'form-control',
+                'id': 'location-input',
+                'placeholder': 'e.g., Atlanta, GA'
+            }),
+            'founded_year': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., 2010',
+                'min': 1800,
+                'max': 2025
+            }),
+            'employees_count': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., 50-100'
+            }),
+        }
+        labels = {
+            'name': 'Company Name *',
+            'description': 'Company Description *',
+            'website': 'Company Website',
+            'logo': 'Company Logo',
+            'location': 'Company Location *',
+            'founded_year': 'Founded Year',
+            'employees_count': 'Number of Employees',
+        }
+        help_texts = {
+            'name': 'Official name of your company',
+            'description': 'Describe your company, products/services, culture, and mission (at least 100 characters)',
+            'website': 'Your company\'s official website URL',
+            'logo': 'Upload your company logo (recommended: square image, at least 200x200px)',
+            'location': 'City and state/country where your company is headquartered',
+            'founded_year': 'Year your company was established',
+            'employees_count': 'Approximate number of employees (e.g., "1-10", "50-100", "500+")',
+        }
+    
+    def clean_description(self):
+        """Ensure description is substantial"""
+        description = self.cleaned_data.get('description', '')
+        if description and len(description.strip()) < 100:
+            raise forms.ValidationError(
+                'Company description must be at least 100 characters. '
+                f'Current length: {len(description.strip())} characters.'
+            )
+        return description
+    
+    def clean_founded_year(self):
+        """Validate founded year is reasonable"""
+        from datetime import datetime
+        founded_year = self.cleaned_data.get('founded_year')
+        if founded_year:
+            current_year = datetime.now().year
+            if founded_year < 1800:
+                raise forms.ValidationError('Founded year cannot be before 1800.')
+            if founded_year > current_year:
+                raise forms.ValidationError(f'Founded year cannot be in the future (current year: {current_year}).')
+        return founded_year

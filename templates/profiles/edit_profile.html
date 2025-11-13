@@ -1,199 +1,193 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% load crispy_forms_tags %}
 
-{% block extra_css %}
-<!-- Leaflet CSS -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<style>
-    #location-map {
-        height: 400px;
-        width: 100%;
-        border: 2px solid #dee2e6;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-    }
-    .location-section {
-        background-color: #f8f9fa;
-        padding: 1.5rem;
-        border-radius: 8px;
-        margin-bottom: 1.5rem;
-    }
-</style>
+{% block title %}
+    {% if is_recruiter %}Edit Company Profile{% else %}Edit Profile{% endif %}
 {% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-10">
-            <div class="card">
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="card shadow">
                 <div class="card-header bg-primary text-white">
-                    <h2>
-                        <i class="fas fa-edit"></i>
+                    <h3 class="mb-0">
                         {% if is_recruiter %}
-                            Edit Company Profile
+                            <i class="fas fa-building"></i> Edit Company Profile
                         {% else %}
-                            Edit Profile
+                            <i class="fas fa-user-edit"></i> Edit Profile
                         {% endif %}
-                    </h2>
+                    </h3>
                 </div>
+                
                 <div class="card-body">
-                    <form method="post" enctype="multipart/form-data">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <form method="post" enctype="multipart/form-data" id="profileForm">
                         {% csrf_token %}
                         
-                        {% if not is_recruiter %}
-                        <!-- LOCATION SECTION WITH MAP (Job Seekers Only) -->
-                        <div class="location-section">
-                            <h4 class="mb-3">
-                                <i class="fas fa-map-marker-alt text-primary"></i> Your Location
-                            </h4>
+                        {% if is_recruiter %}
+                            {# RECRUITER / COMPANY FORM #}
                             
-                            <!-- Text Input with Search -->
-                            <div class="mb-3">
-                                <label for="id_location" class="form-label">
-                                    <strong>Location</strong>
-                                </label>
-                                <div class="input-group">
-                                    <!-- ✅ UPDATED: Explicitly set the id and class -->
-                                    <input type="text" 
-                                        name="location" 
-                                        id="id_location"
-                                        class="form-control"
-                                        value="{{ form.location.value|default:'' }}"
-                                        placeholder="e.g., Atlanta, GA or San Francisco, CA"
-                                        autocomplete="off">
-                                    <button class="btn btn-outline-primary" type="button" id="search-location-btn">
-                                        <i class="fas fa-search"></i> Search
-                                    </button>
-                                    <button class="btn btn-outline-success" type="button" id="current-location-btn">
-                                        <i class="fas fa-crosshairs"></i> Current Location
-                                    </button>
-                                </div>
-                                <small class="form-text text-muted">
-                                    Type your location above and click Search, or click on the map below
-                                </small>
+                            <div class="section-header mb-3">
+                                <h5><i class="fas fa-building"></i> Company Information</h5>
+                                <p class="text-muted">Basic information about your company</p>
                             </div>
                             
-                            <!-- Interactive Map -->
-                            <div id="location-map"></div>
+                            {{ form.name|as_crispy_field }}
+                            {{ form.description|as_crispy_field }}
                             
-                            <!-- Hidden coordinate fields -->
+                            <hr class="my-4">
+                            
+                            <div class="section-header mb-3">
+                                <h5><i class="fas fa-map-marker-alt"></i> Location</h5>
+                                <p class="text-muted">Where is your company located?</p>
+                            </div>
+                            
+                            {{ form.location|as_crispy_field }}
                             {{ form.latitude }}
                             {{ form.longitude }}
                             
-                            <!-- Current coordinates display -->
-                            <div id="coordinates-display" class="alert alert-success mt-2" style="display: none;">
-                                <i class="fas fa-check-circle"></i>
-                                <strong>Location Set:</strong>
-                                <span id="selected-address">--</span>
-                                <br>
-                                <small>
-                                    <strong>Coordinates:</strong> 
-                                    <span id="display-lat">--</span>, 
-                                    <span id="display-lng">--</span>
-                                </small>
-                            </div>
-                        </div>
-                        {% endif %}
-                        
-                        <!-- Rest of form fields -->
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="id_headline" class="form-label">Headline</label>
-                                {{ form.headline }}
+                            <div id="map" style="height: 350px; border-radius: 8px; margin-bottom: 20px;"></div>
+                            <p class="text-muted small">
+                                <i class="fas fa-info-circle"></i> 
+                                Start typing your location above, then click on the map marker to set the exact location.
+                            </p>
+                            
+                            <hr class="my-4">
+                            
+                            <div class="section-header mb-3">
+                                <h5><i class="fas fa-info-circle"></i> Company Details</h5>
+                                <p class="text-muted">Additional information about your company</p>
                             </div>
                             
-                            {% if not is_recruiter %}
-                            <div class="col-md-6 mb-3">
-                                <label for="id_current_position" class="form-label">Current Position</label>
-                                {{ form.current_position }}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.founded_year|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.employees_count|as_crispy_field }}
+                                </div>
                             </div>
+                            
+                            {{ form.website|as_crispy_field }}
+                            
+                            <hr class="my-4">
+                            
+                            <div class="section-header mb-3">
+                                <h5><i class="fas fa-image"></i> Company Logo</h5>
+                                <p class="text-muted">Upload your company logo (recommended: square image, at least 200x200px)</p>
+                            </div>
+                            
+                            {% if form.instance.logo %}
+                                <div class="mb-3">
+                                    <label class="form-label">Current Logo:</label>
+                                    <div>
+                                        <img src="{{ form.instance.logo.url }}" 
+                                             alt="Current logo" 
+                                             style="max-height: 150px; max-width: 150px; border: 1px solid #ddd; border-radius: 8px;">
+                                    </div>
+                                </div>
                             {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="id_bio" class="form-label">Bio</label>
-                            {{ form.bio }}
-                        </div>
-                        
-                        {% if not is_recruiter %}
-                        <div class="mb-3">
-                            <label class="form-label">Skills</label>
-                            {{ form.skills }}
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="id_years_experience" class="form-label">Years of Experience</label>
-                                {{ form.years_experience }}
+                            
+                            {{ form.logo|as_crispy_field }}
+                            
+                        {% else %}
+                            {# JOB SEEKER FORM (keep existing) #}
+                            
+                            <div class="section-header mb-3">
+                                <h5><i class="fas fa-user"></i> Basic Information</h5>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="id_visibility" class="form-label">Profile Visibility</label>
-                                {{ form.visibility }}
+                            
+                            {{ form.headline|as_crispy_field }}
+                            {{ form.bio|as_crispy_field }}
+                            
+                            <hr class="my-4">
+                            
+                            <div class="section-header mb-3">
+                                <h5><i class="fas fa-briefcase"></i> Professional Information</h5>
                             </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="id_education" class="form-label">Education</label>
-                            {{ form.education }}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="id_certifications" class="form-label">Certifications</label>
-                            {{ form.certifications }}
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label for="id_website" class="form-label">Website</label>
-                                {{ form.website }}
+                            
+                            {{ form.current_position|as_crispy_field }}
+                            {{ form.years_experience|as_crispy_field }}
+                            {{ form.education|as_crispy_field }}
+                            {{ form.certifications|as_crispy_field }}
+                            
+                            <hr class="my-4">
+                            
+                            <div class="section-header mb-3">
+                                <h5><i class="fas fa-tools"></i> Skills</h5>
                             </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="id_linkedin" class="form-label">LinkedIn</label>
-                                {{ form.linkedin }}
+                            
+                            {{ form.skills|as_crispy_field }}
+                            
+                            <hr class="my-4">
+                            
+                            <div class="section-header mb-3">
+                                <h5><i class="fas fa-map-marker-alt"></i> Location</h5>
                             </div>
-                            <div class="col-md-4 mb-3">
-                                <label for="id_github" class="form-label">GitHub</label>
-                                {{ form.github }}
+                            
+                            {{ form.location|as_crispy_field }}
+                            {{ form.latitude }}
+                            {{ form.longitude }}
+                            
+                            <div id="map" style="height: 350px; border-radius: 8px; margin-bottom: 20px;"></div>
+                            
+                            <hr class="my-4">
+                            
+                            <div class="section-header mb-3">
+                                <h5><i class="fas fa-link"></i> Links</h5>
                             </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="id_resume" class="form-label">Resume</label>
-                                {{ form.resume }}
+                            
+                            {{ form.website|as_crispy_field }}
+                            {{ form.linkedin|as_crispy_field }}
+                            {{ form.github|as_crispy_field }}
+                            
+                            <hr class="my-4">
+                            
+                            <div class="section-header mb-3">
+                                <h5><i class="fas fa-file"></i> Files</h5>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="id_profile_picture" class="form-label">Profile Picture</label>
-                                {{ form.profile_picture }}
+                            
+                            {{ form.resume|as_crispy_field }}
+                            {{ form.profile_picture|as_crispy_field }}
+                            
+                            <hr class="my-4">
+                            
+                            <div class="section-header mb-3">
+                                <h5><i class="fas fa-cog"></i> Job Preferences</h5>
                             </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="id_preferred_salary_min" class="form-label">Preferred Salary Min</label>
-                                {{ form.preferred_salary_min }}
+                            
+                            {{ form.open_to_work|as_crispy_field }}
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.preferred_salary_min|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.preferred_salary_max|as_crispy_field }}
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="id_preferred_salary_max" class="form-label">Preferred Salary Max</label>
-                                {{ form.preferred_salary_max }}
-                            </div>
-                        </div>
-                        
-                        <div class="form-check mb-3">
-                            {{ form.open_to_work }}
-                            <label class="form-check-label" for="id_open_to_work">
-                                Open to Work
-                            </label>
-                        </div>
+                            
+                            {{ form.visibility|as_crispy_field }}
                         {% endif %}
                         
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                            <a href="{% url 'profiles:view_profile' %}" class="btn btn-secondary me-md-2">
+                        <hr class="my-4">
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save"></i> Save Profile
+                            </button>
+                            <a href="{% url 'profiles:view_profile' %}" class="btn btn-outline-secondary">
                                 <i class="fas fa-times"></i> Cancel
                             </a>
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="fas fa-save"></i> Save Changes
-                            </button>
                         </div>
                     </form>
                 </div>
@@ -201,171 +195,88 @@
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
-{% if not is_recruiter %}
-<!-- Leaflet JS -->
+{# Leaflet Map Integration #}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-// Initialize map variables
-let map;
-let marker;
-let defaultLat = {{ form.latitude.value|default:33.7490 }};
-let defaultLng = {{ form.longitude.value|default:-84.3880 }};
-let defaultZoom = {{ form.latitude.value|yesno:"13,10" }};
-
-// Initialize map on page load
-document.addEventListener('DOMContentLoaded', function() {
-    initMap();
-});
-
-function initMap() {
-    // Create map
-    map = L.map('location-map').setView([defaultLat, defaultLng], defaultZoom);
+    // Initialize map
+    let map = L.map('map').setView([33.7490, -84.3880], 10); // Default to Atlanta
     
-    // Add OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 19
+        attribution: '© OpenStreetMap contributors'
     }).addTo(map);
     
-    // Add marker if location already exists
-    {% if form.latitude.value and form.longitude.value %}
-        addMarker(defaultLat, defaultLng);
-        updateCoordinatesDisplay(defaultLat, defaultLng, '{{ form.location.value|default:"" }}');
-    {% endif %}
+    let marker;
     
-    // Click on map to set location
+    // Set initial marker if coordinates exist
+    const latInput = document.querySelector('input[name="latitude"]');
+    const lonInput = document.querySelector('input[name="longitude"]');
+    
+    if (latInput.value && lonInput.value) {
+        const lat = parseFloat(latInput.value);
+        const lon = parseFloat(lonInput.value);
+        marker = L.marker([lat, lon]).addTo(map);
+        map.setView([lat, lon], 12);
+    }
+    
+    // Update marker on map click
     map.on('click', function(e) {
-        const lat = e.latlng.lat;
-        const lng = e.latlng.lng;
-        addMarker(lat, lng);
-        updateCoordinates(lat, lng);
-        reverseGeocode(lat, lng);
-    });
-}
-
-function addMarker(lat, lng) {
-    if (marker) {
-        map.removeLayer(marker);
-    }
-    
-    marker = L.marker([lat, lng], {
-        draggable: true
-    }).addTo(map);
-    
-    marker.on('dragend', function(e) {
-        const newLat = e.target.getLatLng().lat;
-        const newLng = e.target.getLatLng().lng;
-        updateCoordinates(newLat, newLng);
-        reverseGeocode(newLat, newLng);
-    });
-}
-
-function updateCoordinates(lat, lng) {
-    document.getElementById('id_latitude').value = lat.toFixed(6);
-    document.getElementById('id_longitude').value = lng.toFixed(6);
-    document.getElementById('display-lat').textContent = lat.toFixed(6);
-    document.getElementById('display-lng').textContent = lng.toFixed(6);
-    document.getElementById('coordinates-display').style.display = 'block';
-}
-
-function updateCoordinatesDisplay(lat, lng, address) {
-    updateCoordinates(lat, lng);
-    document.getElementById('selected-address').textContent = address || 'Selected location';
-}
-
-async function reverseGeocode(lat, lng) {
-    try {
-        const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`
-        );
-        const data = await response.json();
-        
-        if (data && data.display_name) {
-            const address = data.address;
-            let locationStr = '';
-            
-            if (address.city || address.town || address.village) {
-                locationStr = address.city || address.town || address.village;
-            }
-            if (address.state) {
-                locationStr += locationStr ? ', ' + address.state : address.state;
-            }
-            
-            if (!locationStr) {
-                locationStr = data.display_name.split(',').slice(0, 2).join(',');
-            }
-            
-            document.getElementById('id_location').value = locationStr;
-            document.getElementById('selected-address').textContent = locationStr;
+        if (marker) {
+            map.removeLayer(marker);
         }
-    } catch (error) {
-        console.error('Reverse geocoding failed:', error);
-    }
-}
-
-async function geocodeAddress(address) {
-    try {
-        const response = await fetch(
-            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`
-        );
-        const data = await response.json();
-        
-        if (data && data.length > 0) {
-            const lat = parseFloat(data[0].lat);
-            const lng = parseFloat(data[0].lon);
-            
-            map.setView([lat, lng], 13);
-            addMarker(lat, lng);
-            updateCoordinatesDisplay(lat, lng, address);
-        } else {
-            alert('Location not found. Please try a different search.');
-        }
-    } catch (error) {
-        console.error('Geocoding failed:', error);
-        alert('Error searching for location. Please try again.');
-    }
-}
-
-document.getElementById('search-location-btn').addEventListener('click', function() {
-    const address = document.getElementById('id_location').value.trim();
-    if (address) {
-        geocodeAddress(address);
-    } else {
-        alert('Please enter a location to search.');
-    }
-});
-
-document.getElementById('id_location').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        document.getElementById('search-location-btn').click();
-    }
-});
-
-document.getElementById('current-location-btn').addEventListener('click', function() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            function(position) {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-                
-                map.setView([lat, lng], 13);
-                addMarker(lat, lng);
-                updateCoordinates(lat, lng);
-                reverseGeocode(lat, lng);
-            },
-            function(error) {
-                alert('Unable to get current location: ' + error.message);
+        marker = L.marker(e.latlng).addTo(map);
+        latInput.value = e.latlng.lat.toFixed(6);
+        lonInput.value = e.latlng.lng.toFixed(6);
+    });
+    
+    // Geocoding for location input
+    const locationInput = document.getElementById('location-input');
+    if (locationInput) {
+        locationInput.addEventListener('change', async function() {
+            const location = this.value;
+            if (location) {
+                try {
+                    const response = await fetch(
+                        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}`
+                    );
+                    const data = await response.json();
+                    if (data && data.length > 0) {
+                        const lat = parseFloat(data[0].lat);
+                        const lon = parseFloat(data[0].lon);
+                        
+                        if (marker) {
+                            map.removeLayer(marker);
+                        }
+                        marker = L.marker([lat, lon]).addTo(map);
+                        map.setView([lat, lon], 12);
+                        
+                        latInput.value = lat.toFixed(6);
+                        lonInput.value = lon.toFixed(6);
+                    }
+                } catch (error) {
+                    console.error('Geocoding error:', error);
+                }
             }
-        );
-    } else {
-        alert('Geolocation is not supported by your browser.');
+        });
     }
-});
 </script>
-{% endif %}
+
+<style>
+    .section-header {
+        border-left: 4px solid #0d6efd;
+        padding-left: 12px;
+    }
+    
+    .section-header h5 {
+        margin-bottom: 4px;
+        color: #0d6efd;
+    }
+    
+    .section-header p {
+        margin-bottom: 0;
+        font-size: 0.9rem;
+    }
+</style>
 {% endblock %}
