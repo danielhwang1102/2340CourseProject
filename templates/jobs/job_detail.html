@@ -25,7 +25,6 @@
                 <h1>{{ job.title }}</h1>
                 <h5 class="text-muted mb-3">{{ job.get_company_name }}</h5>
                 
-                <!-- Apply Button -->
                 {% if user.is_authenticated and user.user_type == 'job_seeker' %}
                     <div class="d-flex gap-2 mb-3">
                         {% if not user_has_applied %}
@@ -38,18 +37,53 @@
                             </div>
                         {% endif %}
                         
-                        <!-- NEW: Contact Recruiter button -->
+                        <!-- Contact Recruiter button -->
                         {% if job.posted_by and job.posted_by != user %}
                             <a href="{% url 'messaging:compose_to_user' job.posted_by.username %}" class="btn btn-outline-primary btn-lg">
                                 <i class="fas fa-envelope"></i> Contact Recruiter
                             </a>
                         {% endif %}
                     </div>
-                    {% elif user.is_authenticated %}
-                    <!-- Recruiter viewing their own job -->
-                    <div class="alert alert-info mb-3">
-                        <i class="fas fa-info-circle"></i> This is your job posting.
-                    </div>
+
+                {% elif user.is_authenticated and user.user_type == 'recruiter' %}
+                    <!-- ✅ NEW: Recruiter viewing their own job -->
+                    {% if user == job.posted_by %}
+                        <div class="alert alert-info mb-3">
+                            <i class="fas fa-info-circle"></i> This is your job posting.
+                        </div>
+                        
+                        <!-- ✅ NEW: Recruiter Action Buttons -->
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <a href="{% url 'jobs:job_applications' job.pk %}" class="btn btn-primary">
+                                <i class="fas fa-users"></i> View Applications ({{ job.applications.count }})
+                            </a>
+                            
+                            <!-- ✅ NEW: Find Candidates Button -->
+                            <a href="{% url 'jobs:candidate_recommendations' job.pk %}" class="btn btn-info">
+                                <i class="fas fa-user-check"></i> Find Candidates
+                            </a>
+                            
+                            {% if job.latitude and job.longitude %}
+                                <a href="{% url 'jobs:applicant_map' job.pk %}" class="btn btn-success">
+                                    <i class="fas fa-map-marked-alt"></i> Applicant Map
+                                </a>
+                            {% endif %}
+                            
+                            <a href="{% url 'jobs:job_edit' job.pk %}" class="btn btn-warning">
+                                <i class="fas fa-edit"></i> Edit Job
+                            </a>
+                            
+                            <a href="{% url 'jobs:job_delete' job.pk %}" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Delete Job
+                            </a>
+                        </div>
+                    {% else %}
+                        <!-- Different recruiter viewing job -->
+                        <div class="alert alert-secondary mb-3">
+                            <i class="fas fa-info-circle"></i> This job was posted by another recruiter.
+                        </div>
+                    {% endif %}
+
                 {% else %}
                     <!-- Not logged in -->
                     <a href="{% url 'account_login' %}?next={{ request.path }}" class="btn btn-primary btn-lg mb-3">

@@ -16,6 +16,9 @@ urlpatterns = [
     path('my-jobs/', views.MyJobsView.as_view(), name='my_jobs'),
     path('<int:pk>/applications/', views.JobApplicationsView.as_view(), name='job_applications'),
 
+    # Job recommendations
+    path('<int:pk>/candidate-recommendations/', views.JobCandidateRecommendationsView.as_view(), name='candidate_recommendations'),
+
     path('<int:pk>/applicants/map/', ApplicantMapView.as_view(), name='applicant_map'),
 
     path('map/', JobMapView.as_view(), name='job_map'),

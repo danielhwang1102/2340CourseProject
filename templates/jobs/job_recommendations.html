@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+
+{% block title %}Recommended Candidates - {{ job.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="fas fa-user-check"></i> Recommended Candidates</h1>
+            <p class="text-muted mb-0">
+                <strong>Job:</strong> {{ job.title }} at {{ job.get_company_name }}
+                <br>
+                <strong>Location:</strong> {{ job.location }}
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'jobs:job_detail' job.pk %}" class="btn btn-outline-primary">
+                <i class="fas fa-briefcase"></i> Back to Job
+            </a>
+            <a href="{% url 'jobs:job_applications' job.pk %}" class="btn btn-outline-secondary">
+                <i class="fas fa-list"></i> View Applications
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <strong>{{ total_candidates }}</strong> candidate{{ total_candidates|pluralize }} match your criteria
+                ({{ job.required_skills.count }} required skill{{ job.required_skills.count|pluralize }})
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters & Sorting -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="min_match" class="form-label">
+                        <i class="fas fa-percentage"></i> Min Match %
+                    </label>
+                    <select name="min_match" id="min_match" class="form-select">
+                        <option value="50" {% if min_match == 50 %}selected{% endif %}>50%</option>
+                        <option value="60" {% if min_match == 60 %}selected{% endif %}>60%</option>
+                        <option value="70" {% if min_match == 70 %}selected{% endif %}>70%</option>
+                        <option value="80" {% if min_match == 80 %}selected{% endif %}>80%</option>
+                        <option value="90" {% if min_match == 90 %}selected{% endif %}>90%</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="max_distance" class="form-label">
+                        <i class="fas fa-map-marker-alt"></i> Max Distance (km)
+                    </label>
+                    <select name="max_distance" id="max_distance" class="form-select">
+                        <option value="25" {% if max_distance == 25 %}selected{% endif %}>25 km</option>
+                        <option value="50" {% if max_distance == 50 %}selected{% endif %}>50 km</option>
+                        <option value="100" {% if max_distance == 100 %}selected{% endif %}>100 km</option>
+                        <option value="250" {% if max_distance == 250 %}selected{% endif %}>250 km</option>
+                        <option value="999999" {% if max_distance >= 999999 %}selected{% endif %}>Any distance</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="sort" class="form-label">
+                        <i class="fas fa-sort"></i> Sort By
+                    </label>
+                    <select name="sort" id="sort" class="form-select">
+                        <option value="match" {% if sort_by == 'match' %}selected{% endif %}>Match Score</option>
+                        <option value="distance" {% if sort_by == 'distance' %}selected{% endif %}>Distance</option>
+                        <option value="experience" {% if sort_by == 'experience' %}selected{% endif %}>Experience</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="form-check">
+                        <input type="checkbox" name="open_to_work" value="true" 
+                               {% if open_to_work_only %}checked{% endif %}
+                               class="form-check-input" id="open_to_work">
+                        <label class="form-check-label" for="open_to_work">
+                            <i class="fas fa-briefcase"></i> Open to work only
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm mt-2 w-100">
+                        <i class="fas fa-filter"></i> Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Candidate Recommendations -->
+    {% if recommendations %}
+        <div class="row">
+            {% for rec in recommendations %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <!-- Match Score Badge -->
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-user-circle"></i>
+                                    {{ rec.user.get_full_name|default:rec.user.username }}
+                                </h5>
+                                <span class="badge {% if rec.match_score >= 80 %}bg-success{% elif rec.match_score >= 60 %}bg-warning text-dark{% else %}bg-secondary{% endif %} fs-6">
+                                    {{ rec.match_score|floatformat:0 }}% Match
+                                    {% if rec.match_score >= 90 %}✨{% elif rec.match_score >= 80 %}🌟{% elif rec.match_score >= 70 %}⭐{% endif %}
+                                </span>
+                            </div>
+
+                            <!-- Headline -->
+                            {% if rec.profile.headline %}
+                                <p class="text-muted mb-2">
+                                    <i class="fas fa-tag"></i> {{ rec.profile.headline }}
+                                </p>
+                            {% endif %}
+
+                            <!-- Experience -->
+                            {% if rec.profile.years_experience %}
+                                <p class="mb-2">
+                                    <i class="fas fa-briefcase"></i>
+                                    <strong>Experience:</strong> {{ rec.profile.years_experience }} year{{ rec.profile.years_experience|pluralize }}
+                                </p>
+                            {% endif %}
+
+                            <!-- Location & Distance -->
+                            {% if rec.profile.location %}
+                                <p class="mb-2">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <strong>Location:</strong> {{ rec.profile.location }}
+                                    {% if rec.distance %}
+                                        <br>
+                                        <small class="text-muted">
+                                            📍 {{ rec.distance_km }} km ({{ rec.distance_miles }} miles) away
+                                        </small>
+                                    {% endif %}
+                                </p>
+                            {% endif %}
+
+                            <!-- Open to Work Badge -->
+                            {% if rec.profile.open_to_work %}
+                                <span class="badge bg-success mb-2">
+                                    <i class="fas fa-check-circle"></i> Open to Work
+                                </span>
+                            {% endif %}
+
+                            <hr>
+
+                            <!-- Skills Match -->
+                            <div class="mb-3">
+                                <h6 class="mb-2">
+                                    <i class="fas fa-check-circle text-success"></i> Matched Skills 
+                                    ({{ rec.matched_skills|length }}/{{ job.required_skills.count }})
+                                </h6>
+                                <div class="d-flex flex-wrap gap-1 mb-2">
+                                    {% for skill in rec.matched_skills %}
+                                        <span class="badge bg-success">
+                                            ✓ {{ skill.name }}
+                                        </span>
+                                    {% empty %}
+                                        <small class="text-muted">No matched skills</small>
+                                    {% endfor %}
+                                </div>
+
+                                {% if rec.missing_skills %}
+                                    <h6 class="mb-2 mt-3">
+                                        <i class="fas fa-minus-circle text-secondary"></i> Missing Skills
+                                    </h6>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        {% for skill in rec.missing_skills %}
+                                            <span class="badge bg-secondary">
+                                                {{ skill.name }}
+                                            </span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <hr>
+
+                            <!-- Match Score Breakdown -->
+                            <div class="small text-muted mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span><i class="fas fa-puzzle-piece"></i> Skills:</span>
+                                    <span><strong>{{ rec.skill_score|floatformat:0 }}/50</strong></span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span><i class="fas fa-map-marker-alt"></i> Location:</span>
+                                    <span><strong>{{ rec.location_score|floatformat:0 }}/30</strong></span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span><i class="fas fa-briefcase"></i> Experience:</span>
+                                    <span><strong>{{ rec.experience_score|floatformat:0 }}/20</strong></span>
+                                </div>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'profiles:view_profile_by_username' rec.user.username %}" 
+                                   class="btn btn-outline-primary btn-sm" target="_blank">
+                                    <i class="fas fa-user"></i> View Profile
+                                </a>
+                                <a href="{% url 'messaging:compose_to_user' rec.user.username %}" 
+                                    class="btn btn-success btn-sm">
+                                    <i class="fas fa-envelope"></i> Send Message
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-warning">
+            <h4><i class="fas fa-exclamation-triangle"></i> No Matching Candidates Found</h4>
+            <p>Try adjusting your filters:</p>
+            <ul class="mb-0">
+                <li>Lower the minimum match percentage</li>
+                <li>Increase the maximum distance</li>
+                <li>Uncheck "Open to work only"</li>
+            </ul>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

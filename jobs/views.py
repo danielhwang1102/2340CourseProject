@@ -4,9 +4,14 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
-from django.db.models import Q, Count
 from django.http import JsonResponse
 import json
+
+from django.db.models import Count, Q, Case, When, IntegerField, F
+from profiles.models import Profile
+from applications.models import Application
+import math
+import math
 
 from .models import Job
 from .forms import JobForm, JobFilterForm
@@ -358,3 +363,206 @@ class ApplicantMapView(LoginRequiredMixin, RecruiterRequiredMixin, DetailView):
             }
         
         return context
+    
+class JobCandidateRecommendationsView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    """
+    Display recommended candidates for a specific job posting.
+    Only accessible to the recruiter who posted the job.
+    """
+    model = Job
+    template_name = 'jobs/job_recommendations.html'
+    context_object_name = 'job'
+    
+    def test_func(self):
+        """Ensure only the job poster (recruiter) can view recommendations"""
+        job = self.get_object()
+        return (
+            self.request.user == job.posted_by and 
+            self.request.user.user_type == 'recruiter'
+        )
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        job = self.object
+        
+        # Get filter parameters from request
+        min_match = int(self.request.GET.get('min_match', 60))
+        max_distance = int(self.request.GET.get('max_distance', 100))
+        open_to_work_only = self.request.GET.get('open_to_work', '') == 'true'
+        sort_by = self.request.GET.get('sort', 'match')  # match, distance, experience
+        
+        # Get job's required skills
+        job_skill_ids = list(job.required_skills.values_list('id', flat=True))
+        
+        # Get candidates who haven't applied yet
+        applied_user_ids = Application.objects.filter(job=job).values_list('applicant_id', flat=True)
+        
+        # Base queryset: public profiles, job seekers, haven't applied
+        candidates = Profile.objects.filter(
+            user__user_type='job_seeker',
+            visibility='public'
+        ).exclude(
+            user_id__in=applied_user_ids
+        ).select_related('user').prefetch_related('skills')
+        
+        # Filter by open_to_work if requested
+        if open_to_work_only:
+            candidates = candidates.filter(open_to_work=True)
+        
+        # Calculate match scores for each candidate
+        recommendations = []
+        
+        for profile in candidates:
+            # Calculate match score
+            match_data = self.calculate_match_score(job, profile, job_skill_ids)
+            
+            # Skip if below minimum match threshold
+            if match_data['total_score'] < min_match:
+                continue
+            
+            # Skip if beyond maximum distance (if both have locations)
+            if match_data['distance'] is not None and match_data['distance'] > max_distance:
+                continue
+            
+            recommendations.append({
+                'profile': profile,
+                'user': profile.user,
+                'match_score': match_data['total_score'],
+                'skill_score': match_data['skill_score'],
+                'location_score': match_data['location_score'],
+                'experience_score': match_data['experience_score'],
+                'matched_skills': match_data['matched_skills'],
+                'missing_skills': match_data['missing_skills'],
+                'distance': match_data['distance'],
+                'distance_km': match_data['distance'],
+                'distance_miles': round(match_data['distance'] * 0.621371, 1) if match_data['distance'] else None,
+            })
+        
+        # Sort recommendations
+        if sort_by == 'distance' and job.latitude:
+            recommendations.sort(key=lambda x: x['distance'] if x['distance'] is not None else 999999)
+        elif sort_by == 'experience':
+            recommendations.sort(key=lambda x: x['profile'].years_experience or 0, reverse=True)
+        else:  # default: sort by match score
+            recommendations.sort(key=lambda x: x['match_score'], reverse=True)
+        
+        # Limit to top 20 candidates
+        recommendations = recommendations[:20]
+        
+        # Add to context
+        context['recommendations'] = recommendations
+        context['total_candidates'] = len(recommendations)
+        context['min_match'] = min_match
+        context['max_distance'] = max_distance
+        context['open_to_work_only'] = open_to_work_only
+        context['sort_by'] = sort_by
+        
+        return context
+    
+    def calculate_match_score(self, job, profile, job_skill_ids):
+        """
+        Calculate match score between job and candidate profile.
+        Returns score from 0-100 based on skills, location, and experience.
+        """
+        total_score = 0
+        skill_score = 0
+        location_score = 0
+        experience_score = 0
+        distance = None
+        
+        # 1. SKILLS MATCH (50 points max)
+        matched_skills = []
+        missing_skills = []
+        
+        if job_skill_ids:
+            candidate_skill_ids = set(profile.skills.values_list('id', flat=True))
+            job_skills_set = set(job_skill_ids)
+            
+            matched_skill_ids = job_skills_set & candidate_skill_ids
+            missing_skill_ids = job_skills_set - candidate_skill_ids
+            
+            # Get skill objects for display
+            matched_skills = list(profile.skills.filter(id__in=matched_skill_ids))
+            missing_skills = list(job.required_skills.filter(id__in=missing_skill_ids))
+            
+            # Calculate skill match percentage
+            if len(job_skill_ids) > 0:
+                skill_match_ratio = len(matched_skill_ids) / len(job_skill_ids)
+                skill_score = skill_match_ratio * 50
+                total_score += skill_score
+        
+        # 2. LOCATION MATCH (30 points max)
+        if job.latitude and job.longitude and profile.latitude and profile.longitude:
+            try:
+                # Calculate distance using haversine formula
+                distance = self.calculate_distance(
+                    float(job.latitude), float(job.longitude),
+                    float(profile.latitude), float(profile.longitude)
+                )
+                
+                # Score: 30 points at 0km, linearly decreasing to 0 at 100km
+                if distance <= 100:
+                    location_score = 30 * (1 - distance / 100)
+                    total_score += location_score
+            except (ValueError, TypeError):
+                pass
+        
+        # 3. EXPERIENCE MATCH (20 points max)
+        if profile.years_experience is not None:
+            candidate_exp = profile.years_experience
+            
+            # Map experience_level to approximate years
+            exp_ranges = {
+                'entry': (0, 2),
+                'mid': (2, 5),
+                'senior': (5, 10),
+                'lead': (10, 999),
+            }
+            
+            if job.experience_level in exp_ranges:
+                min_exp, max_exp = exp_ranges[job.experience_level]
+                
+                if min_exp <= candidate_exp <= max_exp:
+                    # Perfect match
+                    experience_score = 20
+                else:
+                    # Calculate penalty based on distance from range
+                    if candidate_exp < min_exp:
+                        diff = min_exp - candidate_exp
+                    else:
+                        diff = candidate_exp - max_exp
+                    
+                    # Deduct 2 points per year difference
+                    experience_score = max(0, 20 - (diff * 2))
+                
+                total_score += experience_score
+        
+        return {
+            'total_score': round(total_score, 1),
+            'skill_score': round(skill_score, 1),
+            'location_score': round(location_score, 1),
+            'experience_score': round(experience_score, 1),
+            'matched_skills': matched_skills,
+            'missing_skills': missing_skills,
+            'distance': round(distance, 1) if distance else None,
+        }
+    
+    def calculate_distance(self, lat1, lon1, lat2, lon2):
+        """
+        Calculate distance between two coordinates using Haversine formula.
+        Returns distance in kilometers.
+        """
+        R = 6371  # Earth's radius in kilometers
+        
+        lat1_rad = math.radians(lat1)
+        lat2_rad = math.radians(lat2)
+        delta_lat = math.radians(lat2 - lat1)
+        delta_lon = math.radians(lon2 - lon1)
+        
+        a = (math.sin(delta_lat / 2) ** 2 +
+             math.cos(lat1_rad) * math.cos(lat2_rad) *
+             math.sin(delta_lon / 2) ** 2)
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        
+        distance = R * c
+        return distance
