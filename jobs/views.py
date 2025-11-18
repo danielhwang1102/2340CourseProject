@@ -136,7 +136,22 @@ class JobCreateView(LoginRequiredMixin, RecruiterRequiredMixin, CreateView):
     def form_valid(self, form):
         form.instance.posted_by = self.request.user
         response = super().form_valid(form)
-        messages.success(self.request, f'Job "{self.object.title}" has been posted successfully!')
+        try:
+            from django.core.management import call_command
+            call_command('check_new_matches')
+            messages.success(
+                self.request, 
+                f'Job "{self.object.title}" has been posted successfully! '
+                'Matching candidates are being notified.'
+            )
+        except Exception as e:
+            # Silent fail - don't break job posting
+            print(f"Error running check_new_matches: {e}")
+            messages.success(
+                self.request, 
+                f'Job "{self.object.title}" has been posted successfully!'
+            )
+        
         return response
 
     def get_success_url(self):
@@ -153,7 +168,38 @@ class JobUpdateView(LoginRequiredMixin, RecruiterRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        messages.success(self.request, f'Job "{self.object.title}" has been updated successfully!')
+
+        try:
+            from django.core.management import call_command
+            
+            # Only check if significant fields changed
+            changed_fields = form.changed_data
+            significant_fields = [
+                'required_skills', 'city', 'state_province', 'country',
+                'experience_level', 'job_type', 'location_type'
+            ]
+            
+            # Check if any significant field was updated
+            if any(field in changed_fields for field in significant_fields):
+                call_command('check_new_matches')
+                messages.success(
+                    self.request, 
+                    f'Job "{self.object.title}" has been updated! '
+                    'Checking for new matching candidates...'
+                )
+            else:
+                messages.success(
+                    self.request, 
+                    f'Job "{self.object.title}" has been updated successfully!'
+                )
+        except Exception as e:
+            # Silent fail
+            print(f"Error running check_new_matches: {e}")
+            messages.success(
+                self.request, 
+                f'Job "{self.object.title}" has been updated successfully!'
+            )
+        
         return response
 
     def get_success_url(self):

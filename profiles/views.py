@@ -91,7 +91,21 @@ def edit_profile(request):
             if hasattr(form, 'save_m2m'):
                 form.save_m2m()
             
-            messages.success(request, 'Profile updated successfully!')
+            if user.user_type == 'job_seeker':
+                try:
+                    from django.core.management import call_command
+                    call_command('check_new_matches')
+                    messages.success(
+                        request, 
+                        'Profile updated successfully! We\'re checking for new job matches...'
+                    )
+                except Exception as e:
+                    # Silent fail - don't break profile update
+                    print(f"Error running check_new_matches: {e}")
+                    messages.success(request, 'Profile updated successfully!')
+            else:
+                messages.success(request, 'Profile updated successfully!')
+            
             return redirect('profiles:view_profile')
         else:
             # ✅ ADD: Show form errors
