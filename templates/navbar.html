@@ -1,0 +1,171 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="{% url 'home' %}">
+            <i class="fas fa-briefcase"></i> JobPlatform
+        </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'jobs:job_list' %}">
+                        <i class="fas fa-search"></i> Browse Jobs
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'jobs:job_map' %}">
+                        <i class="fas fa-map-marked-alt"></i> Job Map
+                    </a>
+                </li>
+            </ul>
+            
+            <ul class="navbar-nav">
+                {% if user.is_authenticated %}
+                    {% if user.user_type == 'job_seeker' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'applications:my_applications' %}">
+                                <i class="fas fa-file-alt"></i> My Applications
+                            </a>
+                        </li>
+                    {% elif user.user_type == 'recruiter' %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="recruiterDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-briefcase"></i> Jobs
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{% url 'jobs:job_create' %}">
+                                    <i class="fas fa-plus"></i> Post New Job
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'jobs:my_jobs' %}">
+                                    <i class="fas fa-list"></i> My Job Postings
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'jobs:job_list' %}">
+                                    <i class="fas fa-eye"></i> Browse All Jobs
+                                </a></li>
+                            </ul>
+                        </li>
+                        
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="candidatesDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-users"></i> Candidates
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{% url 'profiles:search_candidates' %}">
+                                    <i class="fas fa-search"></i> Search Candidates
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'profiles:saved_searches' %}">
+                                    <i class="fas fa-bookmark"></i> Saved Searches
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'applications:applicants_map' %}">
+                                    <i class="fas fa-map-marked-alt"></i> Applicants Map
+                                </a></li>
+                            </ul>
+                        </li>
+                    {% endif %}
+                    
+                    <li class="nav-item dropdown">
+                        <a class="nav-link position-relative" href="#" id="notificationDropdown" role="button" 
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-bell"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
+                                id="notification-badge" style="display: none; font-size: 0.65rem;">
+                                0
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" style="width: 350px; max-height: 400px; overflow-y: auto;">
+                            <li>
+                                <h6 class="dropdown-header d-flex justify-content-between align-items-center">
+                                    <span><i class="fas fa-bell"></i>Match Notifications</span>
+                                    <a href="{% url 'profiles:notifications' %}?mark_all_read=1" class="btn btn-sm btn-link text-decoration-none" style="font-size: 0.8rem;">
+                                        Mark all read
+                                    </a>
+                                </h6>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            
+                            <!-- Notifications loaded via JavaScript -->
+                            <div id="notification-list">
+                                <li class="dropdown-item text-center text-muted">
+                                    <small>Loading notifications...</small>
+                                </li>
+                            </div>
+                            
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-center" href="{% url 'profiles:notifications' %}">
+                                    <small><i class="fas fa-list"></i> View All Notifications</small>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- Messages Link with Unread Badge -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle position-relative" href="#" id="messagesDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-envelope"></i> Messages
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
+                                id="unread-badge" style="display: none; font-size: 0.65rem;">
+                                0
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="messagesDropdown">
+                            <li><a class="dropdown-item" href="{% url 'messaging:inbox' %}">
+                                <i class="fas fa-inbox"></i> Inbox
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'messaging:compose' %}">
+                                <i class="fas fa-plus"></i> New Message
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'emails:email_history' %}">
+                                <i class="fas fa-history"></i> Email History
+                            </a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- User Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user"></i> {{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'admin:index' %}">
+                                <i class="fas fa-cog"></i> Admin Panel
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'profiles:view_profile' %}">
+                                <i class="fas fa-user"></i> View Profile
+                            </a></li>
+                            
+                            <!-- ADD THIS: Privacy Settings (Job Seekers Only) -->
+                            {% if user.user_type == 'job_seeker' %}
+                            <li><a class="dropdown-item" href="{% url 'profiles:privacy_settings' %}">
+                                <i class="fas fa-shield-alt"></i> Privacy Settings
+                            </a></li>
+                            {% endif %}
+                            
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'account_logout' %}">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a></li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'account_login' %}">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'account_signup' %}">
+                            <i class="fas fa-user-plus"></i> Sign Up
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
