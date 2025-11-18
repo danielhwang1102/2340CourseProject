@@ -13,7 +13,8 @@ from .forms import (
     ProfileCompletionForm, 
     CompanyProfileForm, 
     PrivacySettingsForm,
-    CandidateSearchForm
+    CandidateSearchForm,
+    SaveSearchForm
 )
 from .models import Profile, Skill, SavedSearch, NewMatchNotification
 from django.http import JsonResponse

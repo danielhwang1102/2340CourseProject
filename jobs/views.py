@@ -49,7 +49,12 @@ class JobListView(ListView):
 
         location = params.get('location') or ''
         if location:
-            qs = qs.filter(location__icontains=location)
+            qs = qs.filter(
+                Q(city__icontains=location) |
+                Q(state_province__icontains=location) |
+                Q(country__icontains=location) |
+                Q(street_address__icontains=location)
+            )
 
         job_type = params.get('job_type') or ''
         if job_type:
