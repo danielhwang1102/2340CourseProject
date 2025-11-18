@@ -202,3 +202,72 @@ def update_application_status_ajax(request, pk):
         return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+class RecruiterRequiredMixin(UserPassesTestMixin):
+    """Mixin to ensure only recruiters can access a view"""
+    def test_func(self):
+        return self.request.user.is_authenticated and self.request.user.user_type == 'recruiter'
+    
+    def handle_no_permission(self):
+        messages.error(self.request, 'Only recruiters can access this page.')
+        return redirect('home')
+
+
+class ApplicantsMapView(LoginRequiredMixin, RecruiterRequiredMixin, ListView):
+    """
+    Map view showing clusters of applicants by location.
+    Shows all applicants who have applied to any of the recruiter's jobs.
+    """
+    model = Application
+    template_name = 'applications/applicants_map.html'
+    context_object_name = 'applications'
+    
+    def get_queryset(self):
+        """Get all applications for jobs posted by this recruiter"""
+        return Application.objects.filter(
+            job__posted_by=self.request.user
+        ).select_related('applicant', 'applicant__profile', 'job').order_by('-applied_date')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Prepare location data for the map
+        applicants_data = []
+        seen_applicants = set()  # Track unique applicants
+        
+        for app in self.get_queryset():
+            applicant = app.applicant
+            # Only include each applicant once, even if they applied to multiple jobs
+            if applicant.id not in seen_applicants:
+                profile = getattr(applicant, 'profile', None)
+                if profile and profile.latitude and profile.longitude:
+                    applicants_data.append({
+                        'id': applicant.id,
+                        'username': applicant.username,
+                        'full_name': f"{applicant.first_name} {applicant.last_name}".strip() or applicant.username,
+                        'location': profile.location or 'Unknown',
+                        'latitude': float(profile.latitude),
+                        'longitude': float(profile.longitude),
+                        'headline': profile.headline or 'No headline',
+                        'applications_count': Application.objects.filter(
+                            applicant=applicant, 
+                            job__posted_by=self.request.user
+                        ).count()
+                    })
+                    seen_applicants.add(applicant.id)
+        
+        context['applicants_data'] = json.dumps(applicants_data)
+        context['total_applicants'] = len(applicants_data)
+        context['total_applications'] = self.get_queryset().count()
+        
+        # Calculate center of map (average of all coordinates)
+        if applicants_data:
+            avg_lat = sum(a['latitude'] for a in applicants_data) / len(applicants_data)
+            avg_lng = sum(a['longitude'] for a in applicants_data) / len(applicants_data)
+            context['map_center'] = json.dumps({'lat': avg_lat, 'lng': avg_lng})
+        else:
+            # Default to US center if no data
+            context['map_center'] = json.dumps({'lat': 39.8283, 'lng': -98.5795})
+        
+        return context

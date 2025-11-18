@@ -11,4 +11,7 @@ urlpatterns = [
 
     path('job/<int:job_pk>/pipeline/', views.JobPipelineView.as_view(), name='job_pipeline'),
     path('<int:pk>/update-status-ajax/', views.update_application_status_ajax, name='update_status_ajax'),
+    
+    # Applicants map for recruiters
+    path('applicants-map/', views.ApplicantsMapView.as_view(), name='applicants_map'),
 ]

@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+
+{% block title %}Applicants Map{% endblock %}
+
+{% block extra_css %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""/>
+<!-- Leaflet MarkerCluster CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+<style>
+    #map {
+        height: 600px;
+        width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .stats-container {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .stat-card {
+        flex: 1;
+        min-width: 200px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .stat-card h3 {
+        font-size: 2rem;
+        margin: 0;
+        font-weight: bold;
+    }
+    
+    .stat-card p {
+        margin: 0.5rem 0 0 0;
+        opacity: 0.9;
+        font-size: 0.9rem;
+    }
+    
+    .info-box {
+        background: #e7f3ff;
+        border-left: 4px solid #2196F3;
+        padding: 1rem;
+        border-radius: 4px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .info-box i {
+        color: #2196F3;
+        margin-right: 0.5rem;
+    }
+    
+    .leaflet-popup-content {
+        margin: 1rem;
+    }
+    
+    .popup-header {
+        font-size: 1.1rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: #333;
+    }
+    
+    .popup-detail {
+        margin: 0.25rem 0;
+        color: #666;
+    }
+    
+    .popup-detail i {
+        width: 20px;
+        color: #667eea;
+    }
+    
+    .legend {
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-top: 1rem;
+    }
+    
+    .legend h5 {
+        margin: 0 0 0.5rem 0;
+        font-size: 0.9rem;
+        font-weight: bold;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        margin: 0.5rem 0;
+        font-size: 0.85rem;
+    }
+    
+    .legend-color {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        margin-right: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-3">
+                <i class="bi bi-geo-alt-fill"></i> Applicants Location Map
+            </h1>
+            
+            {% if total_applicants > 0 %}
+                <div class="info-box">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <strong>Interactive Map:</strong> Click on markers to view applicant details. Markers show clusters of applicants in nearby locations.
+                </div>
+                
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <h3>{{ total_applicants }}</h3>
+                        <p>Unique Applicants with Location Data</p>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <h3>{{ total_applications }}</h3>
+                        <p>Total Applications Received</p>
+                    </div>
+                </div>
+                
+                <div id="map" data-applicants='{{ applicants_data|safe }}' data-center='{{ map_center|safe }}'></div>
+                
+                <div class="legend">
+                    <h5><i class="bi bi-info-circle"></i> Map Legend</h5>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #667eea;">
+                            <i class="bi bi-person-fill"></i>
+                        </div>
+                        <span>Individual applicant location</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #f5576c;">2+</div>
+                        <span>Cluster of 2-9 applicants</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ff4757;">10+</div>
+                        <span>Cluster of 10+ applicants</span>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <strong>No location data available.</strong>
+                    <p class="mb-0 mt-2">
+                        You don't have any applicants with location information yet. 
+                        Applicants need to add their location in their profile for it to appear on this map.
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""></script>
+<!-- Leaflet MarkerCluster JS -->
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+<script>
+    // Get data from Django context via data attributes
+    const mapElement = document.getElementById('map');
+    const applicantsData = JSON.parse(mapElement.getAttribute('data-applicants'));
+    const mapCenter = JSON.parse(mapElement.getAttribute('data-center'));
+    
+    // Initialize the map
+    const map = L.map('map').setView([mapCenter.lat, mapCenter.lng], 4);
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+    }).addTo(map);
+    
+    // Create marker cluster group
+    const markers = L.markerClusterGroup({
+        iconCreateFunction: function(cluster) {
+            const count = cluster.getChildCount();
+            let className = 'marker-cluster-small';
+            let size = 40;
+            
+            if (count >= 10) {
+                className = 'marker-cluster-large';
+                size = 50;
+            } else if (count >= 2) {
+                className = 'marker-cluster-medium';
+                size = 45;
+            }
+            
+            return L.divIcon({
+                html: '<div><span>' + count + '</span></div>',
+                className: 'marker-cluster ' + className,
+                iconSize: L.point(size, size)
+            });
+        },
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: true,
+        zoomToBoundsOnClick: true
+    });
+    
+    // Create custom icon for individual markers
+    const customIcon = L.divIcon({
+        html: '<div style="background: #667eea; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"><i class="bi bi-person-fill" style="color: white; font-size: 14px;"></i></div>',
+        className: 'custom-marker',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15],
+        popupAnchor: [0, -15]
+    });
+    
+    // Add markers for each applicant
+    applicantsData.forEach(function(applicant) {
+        const marker = L.marker([applicant.latitude, applicant.longitude], {
+            icon: customIcon
+        });
+        
+        // Create popup content
+        const popupContent = `
+            <div class="popup-header">
+                <i class="bi bi-person-circle"></i> ${applicant.full_name}
+            </div>
+            <div class="popup-detail">
+                <i class="bi bi-briefcase-fill"></i> ${applicant.headline}
+            </div>
+            <div class="popup-detail">
+                <i class="bi bi-geo-alt-fill"></i> ${applicant.location}
+            </div>
+            <div class="popup-detail">
+                <i class="bi bi-file-earmark-text-fill"></i> ${applicant.applications_count} application${applicant.applications_count !== 1 ? 's' : ''}
+            </div>
+        `;
+        
+        marker.bindPopup(popupContent);
+        markers.addLayer(marker);
+    });
+    
+    // Add marker cluster group to map
+    map.addLayer(markers);
+    
+    // Fit map to show all markers if there are any
+    if (applicantsData.length > 0) {
+        map.fitBounds(markers.getBounds(), { padding: [50, 50] });
+    }
+</script>
+{% endblock %}
